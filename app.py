@@ -179,6 +179,54 @@ Please start with your critical analysis, then I'll respond to your challenges.
     return jsonify({"ok": True, "export": export, "chars": len(export)})
 
 
+@app.route("/api/scan_folder", methods=["POST"])
+def scan_folder():
+    """Scan a local folder path — like Handoff but for business docs."""
+    body = request.get_json() or {}
+    folder_path = body.get("path", "").strip()
+    if not folder_path or not os.path.isdir(folder_path):
+        return jsonify({"ok": False, "error": f"Folder not found: {folder_path}"}), 400
+
+    # Walk folder and collect supported files
+    found_files = []
+    for root, dirs, files in os.walk(folder_path):
+        # Skip hidden dirs and common non-business folders
+        dirs[:] = [d for d in dirs if not d.startswith(".") and d not in ("node_modules", "venv", "__pycache__", ".git")]
+        for fname in files:
+            ext = os.path.splitext(fname)[1].lower()
+            if ext in ALLOWED_EXTENSIONS:
+                found_files.append(os.path.join(root, fname))
+                if len(found_files) >= 50:  # Cap at 50 files
+                    break
+
+    if not found_files:
+        return jsonify({"ok": False, "error": "No supported files found in folder"}), 400
+
+    # Parse all files
+    parsed = parse_folder(found_files)
+    questions = quick_questions(parsed["combined_text"])
+
+    sid = str(uuid.uuid4())[:8]
+    sessions[sid] = {
+        "files": parsed["files"],
+        "context": parsed["combined_text"],
+        "analysis": None,
+        "chat_history": [],
+        "questions": questions,
+        "created": datetime.now(timezone.utc).isoformat(),
+    }
+
+    return jsonify({
+        "ok": True,
+        "session_id": sid,
+        "files": [{"name": f["filename"], "type": f["type"], "size_kb": f["size_kb"],
+                    "error": f.get("error")} for f in parsed["files"]],
+        "total_chars": parsed["total_chars"],
+        "questions": questions,
+        "has_api_key": bool(ANTHROPIC_KEY),
+    })
+
+
 @app.route("/api/status", methods=["GET"])
 def status():
     return jsonify({
@@ -286,6 +334,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     </div>
     <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.csv,.txt,.md,.png,.jpg,.jpeg,.gif,.webp" style="display:none">
     <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none">
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <input type="text" id="folderPath" placeholder="Or enter a folder path: /home/user/Documents/project" style="flex:1;padding:10px 12px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:14px;outline:none">
+      <button class="btn btn-outline" onclick="scanFolder()">Scan</button>
+    </div>
   </div>
 
   <!-- Analysis state -->
@@ -461,6 +513,37 @@ function copyExport() {
     t.style.display = 'block';
     setTimeout(() => t.style.display = 'none', 3000);
   });
+}
+
+async function scanFolder() {
+  const path = document.getElementById('folderPath').value.trim();
+  if (!path) return;
+  document.getElementById('dropzone').innerHTML = '<h2>Scanning folder...</h2>';
+  const r = await fetch('/api/scan_folder', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({path})
+  });
+  const data = await r.json();
+  if (!data.ok) {
+    document.getElementById('dropzone').innerHTML = '<h2>Scan failed</h2><p>' + data.error + '</p>';
+    return;
+  }
+  sessionId = data.session_id;
+  let h = '';
+  for (const f of data.files) {
+    h += '<div class="file"><span class="name">' + f.name + '</span><span class="size">' + f.size_kb + ' KB</span><span class="status ' + (f.error ? 'err' : 'ok') + '">' + (f.error || '✓') + '</span></div>';
+  }
+  document.getElementById('fileList').innerHTML = h;
+  if (data.questions.length) {
+    document.getElementById('questionsBox').style.display = 'block';
+    let qh = '';
+    for (const q of data.questions) qh += '<button class="q-btn" onclick="askQuestion(this.textContent)">' + q + '</button>';
+    document.getElementById('questions').innerHTML = qh;
+  }
+  document.getElementById('apiStatus').innerHTML = data.has_api_key ? '<span style="color:#22c55e">API connected</span>' : '<span style="color:#f59e0b">Demo mode</span>';
+  document.getElementById('uploadState').style.display = 'none';
+  document.getElementById('analysisState').style.display = 'block';
 }
 
 function reset() {
