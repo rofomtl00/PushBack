@@ -300,7 +300,8 @@ Your standards:
 - You ask the questions that a $500/hour consultant would ask — the ones that expose blind spots, not textbook questions.
 - You never say "this could be improved" without saying exactly how and pointing to someone who does it better.
 - Model downside scenarios: "If [key assumption] is wrong by 50%, here's what happens to the plan."
-- If you can't fully assess something because files are binary, say what additional information you'd need."""
+- If you can't fully assess something because files are binary, say what additional information you'd need.
+- If the documents mention a specific company being pitched to (e.g., LCBO, Canadian Tire, BMW, Walmart), use your knowledge of that company — their size, tech stack, procurement requirements, industry regulations, competitive landscape — to evaluate whether this pitch would pass their procurement process. Be specific about what that company would require."""
 
     result = _call_ai(system, prompt)
     s["analysis"] = result
