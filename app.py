@@ -236,7 +236,7 @@ def review_chat():
         with urllib.request.urlopen(req, timeout=15) as resp:
             html = resp.read().decode("utf-8", errors="ignore")
     except Exception as e:
-        return jsonify({"ok": False, "error": f"Could not fetch URL: {e}"}), 400
+        return jsonify({"ok": False, "error": "Could not access this conversation. Most AI chats are private. Try using a public share link, or copy-paste the conversation text into a .txt file and upload it instead."}), 400
 
     # Extract conversation text from HTML
     # Strip tags to get raw text
