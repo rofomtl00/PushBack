@@ -90,6 +90,57 @@ Retailers selling to large corps need these BEFORE the first meeting:
 8. "How do you handle French-language requirements for our Quebec stores?"
 9. "What's your data residency policy? Our data needs to stay in Canada."
 10. "If we want to leave in 2 years, how do we export everything?"
+
+### CRM & Customer Data Platform Requirements
+Large retailers like Canadian Tire, Loblaws, or Simons need:
+1. **Unified customer profile** — merges in-store POS transactions, online purchases, loyalty program (Triangle, PC Optimum), email engagement, app activity into one profile.
+2. **CDP (Customer Data Platform)** — not just a CRM. Segment, mParticle, Tealium, or built-in. Must handle millions of profiles with real-time event streaming.
+3. **Loyalty program integration** — existing programs can't be disrupted. API integration with existing loyalty backends.
+4. **Marketing automation** — triggered emails/SMS based on purchase behavior (abandoned cart, post-purchase, replenishment reminders). Must integrate with Klaviyo, Braze, or Salesforce Marketing Cloud.
+5. **Segmentation** — RFM (Recency, Frequency, Monetary) segmentation at minimum. Advanced: predictive LTV, churn risk scoring.
+6. **Consent management** — PIPEDA/CCPA requires explicit opt-in tracking per channel per customer.
+
+### Purchase Analytics & Business Intelligence
+Enterprise retailers expect:
+1. **Basket analysis** — what products are bought together. Powers cross-sell recommendations and store layout decisions.
+2. **Customer LTV modeling** — predict which customers are most valuable over 1-3 years. Inform acquisition spend.
+3. **Purchase frequency & recency** — identify lapsed customers before they churn.
+4. **Channel attribution** — which marketing channel drove the sale (last-click vs multi-touch).
+5. **Inventory velocity by location** — which products sell fast at which stores. Powers allocation decisions.
+6. **Real-time dashboards** — not batch reports. Executives want live data during Black Friday, not next-day summaries.
+7. **Export & API access** — data must be accessible via API for the retailer's own BI tools (Tableau, Power BI, Looker).
+
+### Website Rebuild Requirements
+When a retailer says "redo our website" they mean:
+1. **Core Web Vitals** — Google ranks based on LCP (<2.5s), FID (<100ms), CLS (<0.1). Failing these = lost organic traffic.
+2. **SEO migration** — existing URLs, redirects, structured data, sitemap. A bad migration can lose 30-50% of organic traffic overnight.
+3. **Accessibility (WCAG 2.1 AA)** — legally required in Canada (Accessible Canada Act) and most US states. Non-compliance = lawsuits.
+4. **Content management** — non-technical staff must be able to update products, banners, landing pages without developer involvement.
+5. **Multi-language** — English + French minimum for Canadian retailers. Some need Mandarin, Punjabi for specific markets.
+6. **Mobile-first** — 55% of traffic is mobile. Not just responsive — genuinely optimized for mobile checkout.
+7. **Site search** — Algolia, Searchspring, or equivalent. Bad search = lost sales. Enterprise retailers have 10K-500K SKUs.
+8. **Performance at scale** — page load under 2 seconds with 100K concurrent users. CDN (Cloudflare, Fastly) required.
+
+### Data Governance & Privacy
+Enterprise procurement teams will drill into:
+1. **Data ownership** — who owns the customer data? If the contract ends, full export within 30 days.
+2. **Data residency** — Canadian retailers increasingly require Canadian-hosted data (AWS ca-central-1, Azure Canada).
+3. **Retention policies** — how long is data kept? Automated deletion after defined periods.
+4. **Right to deletion** — customer requests must be fulfilled within 30 days (PIPEDA).
+5. **Subprocessor list** — every third party that touches customer data must be disclosed.
+6. **Breach notification** — 72-hour notification requirement under PIPEDA.
+7. **Analytics export** — the retailer must be able to export ALL their data at any time in standard formats.
+
+### RFP Response Red Flags
+When reviewing a pitch or RFP response for a large retailer contract:
+- No mention of existing system integration → "you don't understand our environment"
+- No migration plan with SEO preservation → "you'll destroy our organic traffic"
+- No accessibility compliance → legal liability
+- No French language support → can't serve Quebec (25% of Canadian retail)
+- No SOC 2 + PCI DSS → procurement will reject before evaluation
+- Vague "we'll customize it" without timeline/cost → scope creep incoming
+- No reference customers of similar size → unproven at enterprise scale
+- No uptime SLA with financial penalties → no accountability
 """
 
 
