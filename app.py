@@ -126,27 +126,33 @@ def _build_prompt(session: dict) -> str:
 
     file_list = "\n".join(f"- {f['filename']} ({f['size_kb']} KB, {f['type']})" for f in files)
 
-    return f"""I'm uploading documents for a critical review. First, identify what these documents are — the industry, the purpose, and the context. Then analyze them accordingly.
+    return f"""I'm uploading documents for a critical review.
 
-Your review should:
-1. Start by stating what you believe these documents are and what industry/context they belong to
-2. Identify the single biggest risk or issue
-3. Challenge specific claims, numbers, or assumptions — cite the exact text
-4. Compare to industry benchmarks where relevant (provided below)
-5. Identify what's missing — what should be here but isn't
-6. End with a Bottom Line: would you approve, invest, or proceed based on what you see
+## Step 1: Understand what this is
+Before analyzing, read through the documents and write a brief summary:
+- What is this project/product/business?
+- What problem does it solve and who is the target user?
+- What stage is it at (idea, MVP, launched, scaling)?
+- What industry does it belong to?
 
-{bench_text if bench_text else ""}
+## Step 2: Evaluate
+Based on your understanding, provide a thorough review:
+- What are the strengths — what's done well?
+- What are the weaknesses — what needs improvement?
+- What risks or gaps exist?
+- What's missing that should be here?
+- How does this compare to competitors or industry standards?
+{f"{chr(10)}Use these industry benchmarks to evaluate the numbers:{chr(10)}{bench_text}" if bench_text else ""}
+{f"{chr(10)}These specific questions were flagged during document scanning:{chr(10)}{q_text}" if q_text else ""}
 
-{f"These specific questions were flagged during document scanning:{chr(10)}{q_text}" if q_text else ""}
+## Step 3: Bottom Line
+End with a clear recommendation: what should the creator focus on next to make this succeed?
 
 ## Documents ({len(files)} files)
 {file_list}
 
 ## Contents
-{context[:80000]}
-
-Begin your analysis."""
+{context[:80000]}"""
 
 
 # ═══════════════════════════════════════════════
