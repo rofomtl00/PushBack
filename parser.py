@@ -37,15 +37,23 @@ def parse_file(filepath: str) -> dict:
             result.update(_parse_pptx(filepath))
         elif ext == ".csv":
             result.update(_parse_csv(filepath))
-        elif ext in (".txt", ".md"):
+        elif ext in (".txt", ".md", ".py", ".js", ".ts", ".tsx", ".jsx", ".go",
+                      ".rs", ".java", ".cpp", ".c", ".h", ".rb", ".php", ".swift",
+                      ".kt", ".html", ".css", ".scss", ".sql", ".sh", ".json",
+                      ".yaml", ".yml", ".toml", ".fdx", ".fountain"):
             with open(filepath, "r", errors="ignore") as f:
-                result["text"] = f.read(100000)  # 100KB max
+                result["text"] = f.read(100000)
         elif ext in (".png", ".jpg", ".jpeg", ".gif", ".webp"):
             result["text"] = f"[Image: {name}]"
             result["metadata"]["type"] = "image"
         else:
-            result["text"] = f"[Unsupported file type: {ext}]"
-            result["error"] = f"Unsupported format: {ext}"
+            with open(filepath, "r", errors="ignore") as f:
+                text = f.read(100000)
+            if text and len(text.strip()) > 10:
+                result["text"] = text
+            else:
+                result["text"] = f"[Unsupported file type: {ext}]"
+                result["error"] = f"Unsupported format: {ext}"
     except Exception as e:
         result["error"] = str(e)
 
