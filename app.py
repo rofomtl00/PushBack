@@ -1022,12 +1022,19 @@ function marked(text) {
     .replace(/\\n/g, '<br>');
 }
 
-// Check API status on load
-fetch('/api/status').then(r => r.json()).then(d => {
-  document.getElementById('apiStatus').innerHTML = d.has_api_key
-    ? '<span style="color:#22c55e">API connected</span>'
-    : '<span style="color:#f59e0b">Set PUSHBACK_API_KEY for AI analysis</span>';
-});
+// Show loading state until server responds (Render cold start takes ~30s)
+document.getElementById('apiStatus').innerHTML = '<span style="color:#f59e0b">Connecting...</span>';
+const startTime = Date.now();
+function checkReady() {
+  fetch('/api/status').then(r => r.json()).then(d => {
+    document.getElementById('apiStatus').innerHTML = '<span style="color:#22c55e">Ready</span>';
+  }).catch(() => {
+    const elapsed = Math.round((Date.now() - startTime) / 1000);
+    document.getElementById('apiStatus').innerHTML = '<span style="color:#f59e0b">Starting up... ' + elapsed + 's</span>';
+    setTimeout(checkReady, 2000);
+  });
+}
+checkReady();
 </script>
 </body>
 </html>
