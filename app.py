@@ -142,6 +142,12 @@ def _get_vertical_context(files, context):
             return INS_CONTEXT
     except Exception:
         pass
+    try:
+        from verticals.project_management import detect_project_management, VERTICAL_CONTEXT as PM_CONTEXT
+        if detect_project_management(files, context):
+            return PM_CONTEXT
+    except Exception:
+        pass
     # Add more verticals here as they're built
     return ""
 
