@@ -205,7 +205,7 @@ def upload():
     except Exception:
         pass
 
-    questions = quick_questions(parsed["combined_text"])
+    questions = []  # Let the AI generate relevant questions, not keyword matching
     doc_type = _detect_type(parsed["files"], parsed["combined_text"])
 
     sessions[sid] = {
