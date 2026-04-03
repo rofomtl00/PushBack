@@ -341,7 +341,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <div class="files" id="fileList"></div>
 
     <div class="actions">
-      <button class="btn btn-red" id="analyzeBtn" onclick="runAnalysis()">Challenge My Work</button>
+      <button class="btn btn-red" id="analyzeBtn" onclick="runAnalysis()">Analyze</button>
       <button class="btn btn-outline" id="exportBtn" onclick="exportContext()">Export for AI Chat</button>
       <button class="btn btn-outline" onclick="reset()">Start Over</button>
     </div>
