@@ -1,7 +1,7 @@
 """
-PushBack — AI Devil's Advocate for Executives
+PushBack for Executives
 ===============================================
-Upload your files. Get challenged.
+Upload your files. Get honest feedback.
 No prompting. No terminal. Just answers.
 
 Usage:
@@ -194,7 +194,7 @@ HTML = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PushBack — AI Devil's Advocate</title>
+<title>PushBack</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#e0e0e0;min-height:100vh}
@@ -271,7 +271,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <div class="header">
   <div>
     <h1>Push<span>Back</span></h1>
-    <div class="sub">AI Devil's Advocate — Upload files, get challenged</div>
+    <div class="sub">Upload your files. Get honest feedback.</div>
   </div>
   <div id="apiStatus" style="font-size:12px;color:#666"></div>
 </div>
@@ -506,7 +506,7 @@ fetch('/api/status').then(r => r.json()).then(d => {
 def main():
     port = 8080
     print(f"")
-    print(f"  PushBack — AI Devil's Advocate")
+    print(f"  PushBack")
     print(f"  http://localhost:{port}")
     if not ANTHROPIC_KEY:
         print(f"  ⚠ Set PUSHBACK_API_KEY for full AI analysis")
