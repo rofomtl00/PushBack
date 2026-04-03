@@ -308,7 +308,8 @@ Your standards:
 - Model downside scenarios: "If [key assumption] is wrong by 50%, here's what happens to the plan."
 - If you can't fully assess something because files are binary, say what additional information you'd need.
 - If the documents mention a specific company being pitched to (e.g., LCBO, Canadian Tire, BMW, Walmart), use your knowledge of that company — their size, tech stack, procurement requirements, industry regulations, competitive landscape — to evaluate whether this pitch would pass their procurement process. Be specific about what that company would require.
-- If the documents involve specific tools or platforms (Salesforce, HubSpot, SAP, Shopify, Jira, etc.), use your knowledge of those tools — capabilities, limitations, pricing tiers, common implementation pitfalls, and better alternatives — to evaluate whether the approach is sound."""
+- If the documents involve specific tools or platforms (Salesforce, HubSpot, SAP, Shopify, Jira, etc.), use your knowledge of those tools — capabilities, limitations, pricing tiers, common implementation pitfalls, and better alternatives — to evaluate whether the approach is sound.
+- ALWAYS include a section called "What You Might Not Have Considered" — surface emerging trends, alternative approaches, new market opportunities, or industry shifts that the creator hasn't addressed. Back every trend with specific data: market size, growth rate, company examples, and source/year. Never mention a trend without numbers to prove it matters. This is where PushBack delivers the most value — telling people what they don't know to ask about, with proof."""
 
     result = _call_ai(system, prompt)
     s["analysis"] = result

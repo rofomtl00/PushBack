@@ -199,6 +199,51 @@ When Canadian Tire or BMW issues an RFP, Accenture/Deloitte/McKinsey help evalua
 - Exit clause: what does unwinding the relationship look like? Data export, transition support, timeline.
 - Insurance: cyber liability, E&O, professional liability — minimums vary but $5-10M typical for enterprise contracts.
 - Subcontractor disclosure: if development is outsourced, enterprise procurement needs to know where and who.
+
+### Emerging Trends the Client Might Not Know About
+PushBack should proactively surface these if relevant:
+
+**Composable Commerce (replacing monolithic platforms):**
+- commercetools, Medusa, Saleor — modular, headless, API-first
+- Enterprise adoption growing 40%+ YoY. BMW chose commercetools over Salesforce.
+- If pitching a monolithic platform, expect "why not composable?" from technical buyers
+
+**Social Commerce ($1.2T global by 2025):**
+- TikTok Shop, Instagram Shopping, YouTube Shopping — buying without leaving the app
+- 53% of Gen Z discovers products on social media before any other channel
+- If the ecommerce pitch doesn't address social commerce integration, it's missing a massive channel
+
+**AI-Powered Personalization:**
+- Not just product recommendations — dynamic pricing, personalized search results, AI-generated product descriptions
+- Canadian Tire runs 70-80 personalization experiments monthly
+- Shopify Magic generates product descriptions, email campaigns, chat responses
+- If the pitch doesn't mention AI personalization, it's already behind Shopify's baseline offering
+
+**Headless CMS + Commerce:**
+- Contentful, Strapi, Sanity — content and commerce separated
+- Enables publishing to web, app, in-store kiosk, social from one CMS
+- If the architecture is tightly coupled CMS + commerce, it limits omnichannel publishing
+
+**Buy Now Pay Later (BNPL):**
+- Growing at 19.2% CAGR in Canada. Afterpay, Klarna, Affirm, Sezzle
+- Average order value increases 20-30% when BNPL is offered
+- If the platform doesn't support BNPL integration, it's leaving revenue on the table
+
+**Unified Commerce (beyond omnichannel):**
+- Not just "connected channels" — single platform for ALL transactions (POS, online, mobile, marketplace)
+- Manhattan Associates, Shopify POS, Oracle Retail — leaders in unified commerce
+- If the pitch says "omnichannel" but the architecture is still channel-separated, it's 2020 thinking
+
+**Sustainability & Ethical Commerce:**
+- Carbon tracking, ethical sourcing transparency, eco-friendly packaging
+- Now a deciding factor in enterprise vendor selection (especially European/Canadian retailers)
+- Patagonia, Simons (B Corp certified) — sustainability is a procurement checkbox
+
+**Same-Day / Last-Mile Delivery:**
+- Amazon sets the expectation. Retailers need to match or differentiate.
+- DoorDash, Uber, Instacart partnerships for same-day from store
+- Ship-from-store reduces delivery time and cost vs centralized fulfillment
+- If the pitch doesn't address last-mile strategy, enterprise buyers will ask about it
 """
 
 

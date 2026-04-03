@@ -208,6 +208,48 @@ When reviewing scripts, budgets, or production plans, analyze each location/scen
 **Example analysis PushBack should give:**
 "Your script has 15 mountain scenes filmed in Quebec. Alberta offers the same Rockies landscape with a 25% tax credit vs Quebec's 20% for non-VFX production spend. On a $5M location budget, that's $250K in additional savings. Plus Alberta has lower crew rates and no language requirement for non-Quebec talent."
 
+### Emerging Formats & Trends (What the User Might Not Know to Ask About)
+PushBack should proactively surface these if relevant to the project:
+
+**Micro Drama Series ($10B+ market):**
+- 60-90 second episodes, 60-120 episodes per series, vertical 9:16 for mobile
+- Budgets: $28K-800K per series (vs $2M-200M traditional)
+- Production: 2-4 weeks (vs 6-18 months traditional)
+- Revenue: coin/credit model ($0.50-1.00 per episode unlock), first 5-15 episodes free
+- Platforms: ReelShort ($490M cumulative revenue), DramaBox ($450M), ShortMax, FlexTV
+- US market: $350M in Q1 2025. Global: $10B in 2024, projected $20B in 3 years
+- Genres: romance, revenge, supernatural, billionaire fantasy, true crime
+- Hollywood entering: MicroCo budgets $100-200K per project
+- If someone is making short-form vertical content and NOT aware of this market, flag it immediately.
+
+**AI-Generated Content ($10B addressable by 2030):**
+- McKinsey estimates $10B of US content spend addressable by AI by 2030
+- AI-generated music/SFX adoption: 12.5% (2023) → 50%+ (2025). Growing fast.
+- Script-to-budget modeling is the highest ROI AI application in production (pre-production, not post)
+- Text-to-image, image-to-video, neural radiance fields, avatar generation, 3D synthesis all production-ready
+- If a production budget doesn't account for AI tools, they're overspending on tasks AI can do
+
+**Virtual Production Market ($2.1B → $8.76B by 2030):**
+- 33.1% CAGR. LED volumes now used below feature-film budgets (episodic, commercials, indie)
+- Not just big studios — mid-budget productions proving the economics work
+- If someone is building sets that could be LED volume shots, flag the cost comparison
+
+**Volumetric Capture ($2.82B → $11B by 2030):**
+- Records full 3D environments including actors. Enables post-capture camera repositioning.
+- Gaming, VR, and film convergence. Unreal Engine as common pipeline.
+- If the project involves digital doubles or 3D character capture, mention volumetric as an option
+
+**FAST Channels (Free Ad-Supported Streaming):**
+- Tubi, Pluto TV, Roku Channel. Growing faster than paid streaming.
+- Lower production budgets but massive reach. Different content strategy.
+- If someone is producing content and only targeting Netflix/Amazon, mention FAST as a distribution option
+
+**Gaming Cinematics Convergence:**
+- Game trailers and cinematics now use film-quality VFX ($50K-500K per minute)
+- Unreal Engine 5 enables film-quality real-time rendering
+- Gaming industry ($200B) spends more on content than Hollywood. Cross-over talent demand.
+- If a VFX studio isn't pitching gaming clients, they're ignoring the biggest content market
+
 ### The Pitch PushBack Should Evaluate
 When reviewing a VFX studio pitch, RFP response, or production budget:
 - Is the cost-per-shot realistic for the quality tier? Compare to benchmarks above.
