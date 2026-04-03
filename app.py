@@ -1,7 +1,7 @@
 """
 PushBack for Executives
 ===============================================
-Upload your files. Get honest feedback.
+Upload your files. Get a second opinion.
 No prompting. No terminal. Just answers.
 
 Usage:
@@ -271,7 +271,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <div class="header">
   <div>
     <h1>Push<span>Back</span></h1>
-    <div class="sub">Upload your files. Get honest feedback.</div>
+    <div class="sub">Upload your files. Get a second opinion.</div>
   </div>
   <div id="apiStatus" style="font-size:12px;color:#666"></div>
 </div>
