@@ -130,6 +130,12 @@ def _get_vertical_context(files, context):
             return VFX_CONTEXT
     except Exception:
         pass
+    try:
+        from verticals.developer import detect_developer, VERTICAL_CONTEXT as DEV_CONTEXT
+        if detect_developer(files, context):
+            return DEV_CONTEXT
+    except Exception:
+        pass
     # Add more verticals here as they're built
     return ""
 
