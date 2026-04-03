@@ -215,6 +215,42 @@ def quick_questions(documents_text: str) -> list:
         if "real-time" in t or "unreal" in t or "game engine" in t:
             questions.append("Real-time vs offline rendering — have you validated that the quality meets broadcast/theatrical standards? What's the fallback if it doesn't?")
 
+    # ── INSURANCE ──
+    is_insurance = any(w in t for w in ["insurance", "premium", "underwriting", "claims", "loss ratio", "combined ratio", "policyholder", "reinsurance"])
+    if is_insurance:
+        if "combined ratio" in t or "loss ratio" in t:
+            questions.append("Your combined ratio — is it trending up or down over the last 3 years? A ratio above 100% means you're losing money on underwriting regardless of investment income.")
+        else:
+            questions.append("What's your combined ratio? The industry averages 99%. Below 95% is strong, above 105% is unsustainable without investment income.")
+        if "premium" in t:
+            questions.append("Is premium growth coming from rate increases or new policies? Rate-driven growth stops when the market softens. New policy growth is more sustainable.")
+        if "claims" in t:
+            questions.append("What's your claims development pattern? Are prior year reserves adequate or are you seeing unfavorable development? Reserve deficiency is the silent killer in insurance.")
+        if "reinsurance" in t:
+            questions.append("What percentage of premium is ceded to reinsurers? Are your reinsurance treaties adequate for a 1-in-100-year event? What's your net retention per occurrence?")
+        questions.append("What's your retention rate? Below 85% suggests pricing or service problems. How does it compare to the market leaders in your lines of business?")
+        if "invest" in t:
+            questions.append("Your investment portfolio — what's the duration and credit quality? Are you reaching for yield with longer duration or lower credit? That's a hidden risk in a rising rate environment.")
+        questions.append("What catastrophe exposure do you have? Have you stress-tested your book against a 2005-level hurricane season or a major cyber event?")
+
+    # ── RETAIL ──
+    is_retail_q = any(w in t for w in ["retail", "store", "inventory", "foot traffic", "same-store", "merchandis"])
+    if is_retail_q:
+        if "same-store" in t or "same store" in t or "comp" in t:
+            questions.append("Same-store sales growth — is it real or inflation-driven? What's the traffic vs ticket split? Growing ticket with declining traffic is a warning sign.")
+        questions.append("What's your sales per square foot compared to category leaders? Apple does $5,500, the average mall store does $400. Where do you fall and why?")
+        if "inventory" in t:
+            questions.append("Inventory turnover — how many times per year? Grocery should be 14-20x, apparel 4-6x. Low turnover means cash trapped in unsold goods.")
+        questions.append("Shrinkage rate — industry average is 1.6%. Above 2% is a serious loss prevention issue. Are you tracking it and what's the trend?")
+
+    # ── MANUFACTURING ──
+    is_mfg = any(w in t for w in ["manufacturing", "supply chain", "factory", "production line", "oee", "defect"])
+    if is_mfg:
+        questions.append("What's your OEE (Overall Equipment Effectiveness)? World-class is 85%+, average is 60%. Below 50% means significant untapped capacity.")
+        if "supply chain" in t or "supplier" in t:
+            questions.append("Single-source dependencies — how many critical components come from one supplier? What's your contingency if that supplier fails?")
+        questions.append("Defect rate and rework cost — what percentage of output requires rework? At what point do you scrap vs rework? Have you calculated the true cost of quality?")
+
     # ── FINANCIAL QUESTIONS (any industry) ──
     if "revenue" in t or "sales" in t:
         questions.append("What's the basis for your revenue projections? Is it bottom-up from actual customers/pipeline, or top-down from market size?")

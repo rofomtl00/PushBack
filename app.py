@@ -27,6 +27,7 @@ except ImportError:
 
 from parser import parse_file, parse_folder
 from analyzer import analyze, quick_questions, ANTHROPIC_KEY
+from benchmarks import get_benchmarks_for_text, format_benchmarks_for_prompt
 
 app = Flask(__name__, static_folder="static")
 app.secret_key = os.urandom(24)
@@ -79,22 +80,26 @@ def upload():
     # Parse all files
     parsed = parse_folder(saved_files)
 
-    # Generate quick questions (no API needed)
+    # Generate quick questions and benchmarks (no API needed)
     questions = quick_questions(parsed["combined_text"])
+    benchmarks = get_benchmarks_for_text(parsed["combined_text"])
 
     # Store session
+    detected = [b["label"] for b in benchmarks.values()] if benchmarks else ["General Business"]
     sessions[sid] = {
         "files": parsed["files"],
         "context": parsed["combined_text"],
         "analysis": None,
         "chat_history": [],
         "questions": questions,
+        "benchmarks": benchmarks,
         "created": datetime.now(timezone.utc).isoformat(),
     }
 
     return jsonify({
         "ok": True,
         "session_id": sid,
+        "industries_detected": detected,
         "files": [{"name": f["filename"], "type": f["type"], "size_kb": f["size_kb"],
                     "error": f.get("error")} for f in parsed["files"]],
         "total_chars": parsed["total_chars"],
@@ -304,6 +309,16 @@ def export_context():
         focus_areas.append("INVESTOR LENS: What would a skeptical VC ask in the first 5 minutes? Is the valuation justified by the metrics? What are the biggest risks that aren't disclosed?")
     if has_operations:
         focus_areas.append("EXECUTION RISK: Are the timelines realistic given the team size? What happens if key milestones slip 6 months? Is there enough runway for that?")
+    has_insurance = any(w in text_lower for w in ["insurance", "premium", "underwriting", "claims", "loss ratio", "combined ratio", "reinsurance"])
+    has_retail = any(w in text_lower for w in ["retail", "store", "inventory", "foot traffic", "same-store", "merchandis"])
+    has_manufacturing = any(w in text_lower for w in ["manufacturing", "supply chain", "factory", "production line", "oee", "defect"])
+
+    if has_insurance:
+        focus_areas.append("INSURANCE REVIEW: Combined ratio trend (above 100% = underwriting loss). Reserve adequacy. Reinsurance coverage. Catastrophe exposure. Retention rate vs market leaders. Investment portfolio duration and credit risk.")
+    if has_retail:
+        focus_areas.append("RETAIL REVIEW: Sales per square foot vs category leaders. Same-store growth (traffic vs ticket split). Inventory turnover by category. Shrinkage rate. Omnichannel integration.")
+    if has_manufacturing:
+        focus_areas.append("MANUFACTURING REVIEW: OEE vs world-class benchmark (85%). Defect rate and cost of quality. Supply chain single-source risks. Inventory days. On-time delivery rate.")
     if has_film:
         focus_areas.append("PRODUCTION BUDGET REVIEW: Break down above-the-line vs below-the-line. Is contingency included? Are shooting day costs realistic? Check crew rates, location fees, insurance, post-production timeline, and distribution strategy.")
     if has_gfx:
@@ -369,6 +384,8 @@ Start with the single most dangerous conclusion from this conversation — the o
 - Don't list 20 minor issues. Focus on the 5 things that matter most.
 - Quote the specific text, number, or slide you're challenging.
 - End with a "Bottom Line" — one paragraph: if this landed on your desk, would you sign off?
+
+{format_benchmarks_for_prompt(get_benchmarks_for_text(context))}
 
 ## Document Architecture ({len(s['files'])} files)
 
