@@ -127,14 +127,52 @@ def upload():
 
 @app.route("/api/analyze", methods=["POST"])
 def run_analysis():
-    """Run full AI critical analysis on uploaded documents."""
+    """Run full AI critical analysis — uses client-provided API key."""
     body = request.get_json() or {}
     sid = body.get("session_id", "")
+
     if sid not in sessions:
         return jsonify({"ok": False, "error": "Session not found. Upload files first."}), 404
 
     s = sessions[sid]
-    result = analyze(s["context"], s["files"])
+
+    # Build the full prompt with benchmarks
+    benchmarks = s.get("benchmarks", {})
+    from benchmarks import format_benchmarks_for_prompt
+    bench_text = format_benchmarks_for_prompt(benchmarks)
+    questions = s.get("questions", [])
+    q_text = "\n".join(f"- {q}" for q in questions) if questions else ""
+
+    full_context = f"""Analyze these business documents critically. Compare against the industry benchmarks provided.
+
+{bench_text}
+
+Specific questions to address:
+{q_text}
+
+Documents:
+{s['context'][:80000]}
+
+Start with the single most important finding. Be specific — cite exact numbers and documents."""
+
+    # Use server's API key — executive never sees it
+    server_key = os.environ.get("PUSHBACK_API_KEY", "")
+    if server_key:
+        try:
+            import anthropic
+            client = anthropic.Anthropic(api_key=server_key)
+            response = client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=4096,
+                system="You are PushBack — a senior business advisor. Your job is to find what's wrong, what's missing, and what could fail. Be direct. Cite specific numbers. Compare to industry benchmarks when provided. End with a Bottom Line: would you approve, invest, or proceed?",
+                messages=[{"role": "user", "content": full_context}],
+            )
+            result = response.content[0].text
+        except Exception as e:
+            result = f"Analysis error: {e}. Please try again."
+    else:
+        result = analyze(s["context"], s["files"])
+
     s["analysis"] = result
     s["chat_history"].append({"role": "assistant", "content": result})
 
@@ -156,8 +194,28 @@ def chat():
     s = sessions[sid]
     s["chat_history"].append({"role": "user", "content": question})
 
-    # Build conversation with document context
-    response = analyze(s["context"], s["files"], question=question)
+    # Use server API key for follow-up conversation
+    server_key = os.environ.get("PUSHBACK_API_KEY", "")
+    if server_key and s.get("analysis"):
+        try:
+            import anthropic
+            client = anthropic.Anthropic(api_key=server_key)
+            messages = [
+                {"role": "user", "content": f"Here are business documents I need reviewed:\n\n{s['context'][:40000]}"},
+                {"role": "assistant", "content": s["analysis"]},
+                {"role": "user", "content": question},
+            ]
+            resp = client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=2048,
+                system="You are PushBack. Continue your critical analysis. Stay specific. Push back when the user defends weak points. Acknowledge when they have good answers.",
+                messages=messages,
+            )
+            response = resp.content[0].text
+        except Exception as e:
+            response = f"Error: {e}"
+    else:
+        response = analyze(s["context"], s["files"], question=question)
     s["chat_history"].append({"role": "assistant", "content": response})
 
     return jsonify({"ok": True, "response": response})
@@ -728,10 +786,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <div class="files" id="fileList"></div>
 
     <div class="actions">
-      <button class="btn btn-red" id="analyzeBtn" onclick="exportAndOpen()">Analyze with Claude</button>
-      <button class="btn btn-outline" onclick="exportAndOpen('chatgpt')">Analyze with ChatGPT</button>
-      <button class="btn btn-outline" onclick="exportAndOpen('gemini')">Analyze with Gemini</button>
-      <button class="btn btn-outline" onclick="reset()">Start Over</button>
+      <button class="btn btn-red" id="analyzeBtn" onclick="runFullAnalysis()">Analyze</button>
+      <button class="btn btn-outline" id="downloadBtn" onclick="downloadReport()" style="display:none">Download Report</button>
+      <button class="btn btn-outline" id="resetBtn" onclick="reset()" style="display:none">New Analysis</button>
     </div>
 
     <div id="questionsBox" style="display:none">
@@ -956,7 +1013,48 @@ async function reviewChat() {
   document.getElementById('analysisState').style.display = 'block';
 }
 
-async function exportAndOpen(target) {
+async function runFullAnalysis() {
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true; btn.textContent = 'Analyzing...';
+
+  const r = await fetch('/api/analyze', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({session_id: sessionId})
+  });
+  const data = await r.json();
+
+  if (data.ok && data.analysis) {
+    document.getElementById('analysisContent').innerHTML = marked(data.analysis);
+    document.getElementById('analysisBox').style.display = 'block';
+    document.getElementById('chatBox').style.display = 'block';
+    document.getElementById('downloadBtn').style.display = 'inline-block';
+    document.getElementById('resetBtn').style.display = 'inline-block';
+    btn.textContent = 'Re-Analyze';
+  } else {
+    document.getElementById('analysisContent').innerHTML = '<p style="color:#ef4444">' + (data.error || 'Analysis failed. Please try again.') + '</p>';
+    document.getElementById('analysisBox').style.display = 'block';
+    btn.textContent = 'Retry';
+  }
+  btn.disabled = false;
+}
+
+function downloadReport() {
+  const analysis = document.getElementById('analysisContent').innerText;
+  const files = document.getElementById('fileList').innerText;
+  const report = 'PUSHBACK ANALYSIS REPORT\\n' +
+    '========================\\n\\n' +
+    'Date: ' + new Date().toLocaleDateString() + '\\n\\n' +
+    'Documents Reviewed:\\n' + files + '\\n\\n' +
+    'Analysis:\\n' + analysis;
+  const blob = new Blob([report], {type: 'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'PushBack_Report_' + new Date().toISOString().slice(0,10) + '.txt';
+  a.click();
+}
+
+async function _unused_exportAndOpen(target) {
   const btn = document.getElementById('analyzeBtn');
   btn.disabled = true; btn.textContent = 'Preparing...';
 
