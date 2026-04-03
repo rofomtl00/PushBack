@@ -175,6 +175,46 @@ def quick_questions(documents_text: str) -> list:
         questions.append("What's your take rate and how does it compare to competitors? At what point do sellers/buyers leave for a cheaper alternative?")
         questions.append("Disintermediation risk — what stops buyers and sellers from going direct after they find each other on your platform?")
 
+    # ── FILM / PRODUCTION ──
+    is_film = any(w in t for w in ["film", "production", "shooting", "script", "screenplay", "director", "producer", "post-production", "vfx", "post production", "principal photography", "wrap", "pre-production", "storyboard", "location", "talent", "cast", "crew"])
+    is_gfx = any(w in t for w in ["vfx", "visual effects", "cgi", "animation", "render", "composit", "motion capture", "mocap", "3d model", "unreal", "houdini", "nuke", "maya", "blender"])
+
+    if is_film:
+        if "budget" in t:
+            questions.append("Does your budget include contingency (typically 10-15%)? What happens when you go over — who covers it?")
+            questions.append("Above-the-line vs below-the-line — what's the split? Is talent taking a disproportionate share of the budget?")
+        else:
+            questions.append("What's the total production budget including post, marketing, and distribution? Is there a contingency fund?")
+        if "schedule" in t or "day" in t or "shoot" in t:
+            questions.append("How many shooting days? What's the cost per day including crew, equipment, locations, and meals? What if weather or permits delay you 3 days?")
+        if "location" in t:
+            questions.append("Location costs — are permits, insurance, security, and restoration fees included? What's your backup if a location falls through?")
+        if "post" in t or "edit" in t:
+            questions.append("Post-production timeline — is it realistic given the volume of footage? What happens if reshoots are needed? Is that budgeted?")
+        if "distribut" in t or "release" in t or "festival" in t:
+            questions.append("Distribution strategy — what's the P&A (prints and advertising) budget? Festival submissions cost $50-150 each — how many are you targeting?")
+        if "investor" in t or "financ" in t or "return" in t:
+            questions.append("What's the realistic ROI path? Most independent films lose money. What's your break-even scenario and how many units/streams does that require?")
+        if "tax credit" in t or "incentive" in t or "rebate" in t:
+            questions.append("Tax credits — are they confirmed or assumed? What percentage of budget depends on them? What if the program changes or delays payment?")
+        questions.append("Insurance — do you have completion bond, E&O, and general liability? What happens if a key cast member is unavailable mid-shoot?")
+        if "crew" in t or "team" in t:
+            questions.append("Key crew rates — are they union or non-union? Have you budgeted for overtime, meal penalties, and turnaround violations?")
+
+    if is_gfx:
+        if "budget" in t or "cost" in t:
+            questions.append("VFX budget — is it per-shot or lump sum? How many shots are expected and what's the average complexity? What happens when shot count doubles in post?")
+        if "render" in t:
+            questions.append("Render costs — are you using local render farm or cloud? Cloud rendering can spike costs unpredictably. What's the per-frame cost estimate?")
+        if "timeline" in t or "deadline" in t or "deliver" in t:
+            questions.append("VFX delivery timeline — are there locked cuts or will editorial changes require rework? Every re-comp costs money.")
+        questions.append("What's the revision policy? Unlimited revisions is a budget killer. Is there a cap on rounds?")
+        if "outsourc" in t or "vendor" in t or "studio" in t:
+            questions.append("Vendor management — how many VFX houses? What happens if one misses delivery? Do you have overlap or backup vendors?")
+        questions.append("Scope creep — has the director signed off on final shot count and complexity? What's the change order process and cost?")
+        if "real-time" in t or "unreal" in t or "game engine" in t:
+            questions.append("Real-time vs offline rendering — have you validated that the quality meets broadcast/theatrical standards? What's the fallback if it doesn't?")
+
     # ── FINANCIAL QUESTIONS (any industry) ──
     if "revenue" in t or "sales" in t:
         questions.append("What's the basis for your revenue projections? Is it bottom-up from actual customers/pipeline, or top-down from market size?")

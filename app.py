@@ -289,6 +289,8 @@ def export_context():
     has_projections = any(w in text_lower for w in ["projection", "forecast", "estimate", "expected", "anticipated", "q1", "q2", "q3", "q4"])
     has_fundraise = any(w in text_lower for w in ["investor", "funding", "valuation", "raise", "series", "seed", "pitch"])
     has_operations = any(w in text_lower for w in ["timeline", "milestone", "deadline", "resource", "headcount", "team"])
+    has_film = any(w in text_lower for w in ["film", "production", "shooting", "script", "pre-production", "post-production", "vfx", "cast", "crew", "location", "principal photography"])
+    has_gfx = any(w in text_lower for w in ["vfx", "visual effects", "cgi", "animation", "render", "composit", "motion capture"])
 
     # Build targeted analysis instructions based on what's in the documents
     focus_areas = []
@@ -302,6 +304,10 @@ def export_context():
         focus_areas.append("INVESTOR LENS: What would a skeptical VC ask in the first 5 minutes? Is the valuation justified by the metrics? What are the biggest risks that aren't disclosed?")
     if has_operations:
         focus_areas.append("EXECUTION RISK: Are the timelines realistic given the team size? What happens if key milestones slip 6 months? Is there enough runway for that?")
+    if has_film:
+        focus_areas.append("PRODUCTION BUDGET REVIEW: Break down above-the-line vs below-the-line. Is contingency included? Are shooting day costs realistic? Check crew rates, location fees, insurance, post-production timeline, and distribution strategy.")
+    if has_gfx:
+        focus_areas.append("VFX/GFX BUDGET REVIEW: Per-shot vs lump sum costing. Render farm costs (cloud vs local). Revision policy and scope creep risk. Vendor delivery timelines. Shot count vs budget alignment.")
     if not focus_areas:
         focus_areas.append("GENERAL REVIEW: Identify the strongest and weakest parts of this work. What's missing? What questions should be asked before proceeding?")
 
