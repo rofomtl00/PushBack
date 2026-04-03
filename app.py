@@ -426,7 +426,9 @@ def export_context():
     is_raw_data = not has_claims and any(f.get("type") in (".xlsx", ".xls", ".csv") for f in s["files"])
     is_presentation = not has_claims and any(f.get("type") == ".pptx" for f in s["files"])
     is_script = any(w in text_lower for w in ["int.", "ext.", "fade in", "cut to", "dissolve", "scene", "intercut", "v.o.", "o.s."])
-    is_code = any(f.get("type") in (".py", ".js", ".ts", ".go", ".rs", ".java", ".cpp", ".c", ".rb", ".php") for f in s["files"])
+    code_exts = {".py", ".js", ".ts", ".go", ".rs", ".java", ".cpp", ".c", ".rb", ".php", ".tsx", ".jsx", ".swift", ".kt"}
+    code_files = [f for f in s["files"] if f.get("type") in code_exts]
+    is_code = len(code_files) > len(s["files"]) / 2  # Majority are code files
     is_film_project = any(w in text_lower for w in ["shooting schedule", "call sheet", "shot list", "storyboard", "production schedule", "wrap", "pre-production", "principal photography"])
     has_financials = any(w in text_lower for w in ["revenue", "profit", "margin", "cost", "budget", "forecast", "p&l", "balance sheet", "cash flow"])
     has_strategy = any(w in text_lower for w in ["market", "competitor", "growth", "strategy", "roadmap", "vision"])
@@ -508,7 +510,34 @@ Quote specific exchanges. Name specific gaps. No generic observations.
 Start with the single most dangerous conclusion from this conversation — the one that could cost the most money or time if acted on without further validation.
 """
     else:
-        if is_script:
+        if is_code:
+            export = f"""You are a senior software architect conducting a code review. Be thorough and direct.
+
+## Review:
+1. **Architecture** — Is the structure logical? Are responsibilities clearly separated? Any circular dependencies or god classes?
+2. **Bugs** — Look for: null/undefined access, race conditions, off-by-one errors, unhandled exceptions, resource leaks, SQL injection, XSS.
+3. **Performance** — N+1 queries, unbounded loops, missing indexes, unnecessary computation, memory leaks.
+4. **Security** — Hardcoded secrets, missing input validation, insecure defaults, missing auth checks.
+5. **Maintainability** — Is the code readable? Would a new developer understand it? Dead code? Duplicated logic?
+6. **Testing gaps** — What's untestable? What edge cases are missing? What would break if dependencies change?
+7. **Dependencies** — Are they current? Any known vulnerabilities? Over-reliance on a single library?
+
+Don't comment on formatting or style. Focus on things that could cause failures, data loss, security breaches, or scaling problems.
+
+## Files ({len(code_files)} code files, {len(s['files'])} total)
+{file_list}
+
+{_build_doc_map(s['files'], context)}
+
+## Code
+
+{context[:80000]}
+
+---
+
+Start with the single most critical issue — the one that would cause a production incident if deployed.
+"""
+        elif is_script:
             export = f"""You are an experienced script reader and development executive. Review this screenplay/script with a critical eye.
 
 ## Your Coverage Report Should Address:
