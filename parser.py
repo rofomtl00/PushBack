@@ -43,17 +43,59 @@ def parse_file(filepath: str) -> dict:
                       ".yaml", ".yml", ".toml", ".fdx", ".fountain"):
             with open(filepath, "r", errors="ignore") as f:
                 result["text"] = f.read(100000)
-        elif ext in (".png", ".jpg", ".jpeg", ".gif", ".webp"):
+        elif ext in (".png", ".jpg", ".jpeg", ".gif", ".webp", ".tiff", ".bmp", ".svg"):
             result["text"] = f"[Image: {name}]"
             result["metadata"]["type"] = "image"
+            result["metadata"]["format"] = ext
+        # Video files — can't read content but log metadata
+        elif ext in (".mp4", ".mov", ".avi", ".mkv", ".webm", ".flv", ".wmv", ".m4v",
+                      ".prproj", ".drp", ".fcpxml", ".aep"):
+            size_mb = round(size_kb / 1024, 1)
+            result["text"] = f"[Video/Project file: {name} ({size_mb} MB)]"
+            result["metadata"]["type"] = "video" if ext not in (".prproj", ".drp", ".fcpxml", ".aep") else "video-project"
+            result["metadata"]["size_mb"] = size_mb
+        # Audio files
+        elif ext in (".mp3", ".wav", ".flac", ".aac", ".ogg", ".m4a", ".aif", ".aiff",
+                      ".als", ".flp", ".logic", ".ptx", ".rpp"):
+            size_mb = round(size_kb / 1024, 1)
+            result["text"] = f"[Audio/Music file: {name} ({size_mb} MB)]"
+            result["metadata"]["type"] = "audio" if ext not in (".als", ".flp", ".logic", ".ptx", ".rpp") else "music-project"
+            result["metadata"]["size_mb"] = size_mb
+        # 3D/Graphics files
+        elif ext in (".blend", ".fbx", ".obj", ".glb", ".gltf", ".stl", ".usd",
+                      ".c4d", ".max", ".ma", ".psd", ".ai", ".xcf", ".sketch", ".fig",
+                      ".indd", ".afdesign", ".afphoto"):
+            size_mb = round(size_kb / 1024, 1)
+            project_types = {".blend":"Blender", ".c4d":"Cinema 4D", ".max":"3ds Max", ".ma":"Maya",
+                           ".psd":"Photoshop", ".ai":"Illustrator", ".xcf":"GIMP", ".sketch":"Sketch",
+                           ".fig":"Figma", ".indd":"InDesign", ".afdesign":"Affinity Designer",
+                           ".afphoto":"Affinity Photo"}
+            app_name = project_types.get(ext, "3D/Graphics")
+            result["text"] = f"[{app_name} project: {name} ({size_mb} MB)]"
+            result["metadata"]["type"] = "graphics-project"
+            result["metadata"]["application"] = app_name
+            result["metadata"]["size_mb"] = size_mb
+        # Medical/scientific files
+        elif ext in (".dcm", ".nii", ".nii.gz", ".dicom"):
+            result["text"] = f"[Medical imaging: {name} (DICOM)]"
+            result["metadata"]["type"] = "medical-imaging"
+        # CAD/Engineering
+        elif ext in (".dwg", ".dxf", ".step", ".stp", ".iges", ".igs"):
+            result["text"] = f"[CAD/Engineering: {name}]"
+            result["metadata"]["type"] = "cad"
         else:
-            with open(filepath, "r", errors="ignore") as f:
-                text = f.read(100000)
-            if text and len(text.strip()) > 10:
-                result["text"] = text
-            else:
-                result["text"] = f"[Unsupported file type: {ext}]"
-                result["error"] = f"Unsupported format: {ext}"
+            # Try to read as text, fall back to metadata only
+            try:
+                with open(filepath, "r", errors="ignore") as f:
+                    text = f.read(100000)
+                if text and len(text.strip()) > 10 and not any(c in text[:200] for c in ['\x00', '\xff', '\xfe']):
+                    result["text"] = text
+                else:
+                    size_mb = round(size_kb / 1024, 1)
+                    result["text"] = f"[Binary file: {name} ({size_mb} MB)]"
+                    result["metadata"]["type"] = "binary"
+            except Exception:
+                result["text"] = f"[File: {name} ({size_kb} KB)]"
     except Exception as e:
         result["error"] = str(e)
 
