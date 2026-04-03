@@ -287,8 +287,11 @@ def export_context():
     questions = s.get("questions", [])
     context = s["context"]
 
-    # Detect what kind of documents these are
+    # Detect document nature: claims/pitch vs raw data
     text_lower = context.lower()
+    has_claims = any(w in text_lower for w in ["we will", "we plan", "our goal", "we expect", "projected", "forecast", "target", "strategy", "vision", "opportunity", "advantage", "believe", "anticipate"])
+    is_raw_data = not has_claims and any(f.get("type") in (".xlsx", ".xls", ".csv") for f in s["files"])
+    is_presentation = not has_claims and any(f.get("type") == ".pptx" for f in s["files"])
     has_financials = any(w in text_lower for w in ["revenue", "profit", "margin", "cost", "budget", "forecast", "p&l", "balance sheet", "cash flow"])
     has_strategy = any(w in text_lower for w in ["market", "competitor", "growth", "strategy", "roadmap", "vision"])
     has_projections = any(w in text_lower for w in ["projection", "forecast", "estimate", "expected", "anticipated", "q1", "q2", "q3", "q4"])
@@ -369,7 +372,59 @@ Quote specific exchanges. Name specific gaps. No generic observations.
 Start with the single most dangerous conclusion from this conversation — the one that could cost the most money or time if acted on without further validation.
 """
     else:
-        export = f"""You are reviewing the following business documents. Your job is to find what's wrong, what's missing, and what could fail. Do not validate — the person sharing these needs to hear what no one else will tell them.
+        if is_presentation and not has_claims:
+            export = f"""You are reviewing a business presentation. The slides contain data, charts, and bullet points but may not make explicit claims. Your job is to:
+
+1. **Interpret what's being communicated** — What story are these slides trying to tell? Is it clear or confusing?
+2. **Question the data shown** — Are the charts misleading? Are axes truncated? Are comparisons fair? Is context missing?
+3. **Identify what's left unsaid** — What slides are missing? What would a board member or investor ask after seeing this?
+4. **Assess the narrative** — Does the data support the implied conclusions? Where is the presentation stronger than the data behind it?
+5. **Compare to benchmarks** — How do the numbers shown compare to industry standards?
+
+{format_benchmarks_for_prompt(get_benchmarks_for_text(context))}
+
+## Presentation ({len(s['files'])} files)
+{file_list}
+
+{_build_doc_map(s['files'], context)}
+
+## Slide Contents
+
+{context[:80000]}
+
+---
+
+Start with: if you had to give this presentation a grade (A through F) based on how well the data supports the message, what would it be and why?
+"""
+        elif is_raw_data:
+            export = f"""You are a senior analyst reviewing raw business data. No claims or conclusions have been made yet — your job is to analyze the data and surface what matters.
+
+## Your Analysis Should Cover:
+1. **Key patterns** — What trends, outliers, or anomalies do you see in the numbers? What's improving and what's declining?
+2. **Red flags** — Any numbers that look unusual, inconsistent, or concerning? Missing data that should be there?
+3. **Comparisons** — How do these numbers compare to the industry benchmarks provided below? Where is this business above or below average?
+4. **What the data doesn't show** — What additional data would you need to draw real conclusions? What questions should the data owner be asking?
+5. **Actionable insights** — Based solely on what the data shows, what are the top 3 things this business should focus on?
+
+Be specific. Reference actual numbers from the data. Don't speculate beyond what the data supports.
+
+{format_benchmarks_for_prompt(get_benchmarks_for_text(context))}
+
+## Data Files ({len(s['files'])} files)
+{file_list}
+
+{_build_doc_map(s['files'], context)}
+
+## Data Contents
+
+{context[:80000]}
+
+---
+
+Start with the single most important insight you see in this data — the one thing the business owner needs to know right now.
+"""
+        else:
+            export = f"""You are reviewing the following business documents. Your job is to find what's wrong, what's missing, and what could fail. Do not validate — the person sharing these needs to hear what no one else will tell them.
 
 ## Your Focus Areas (based on what's in these documents)
 
