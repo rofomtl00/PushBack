@@ -247,20 +247,20 @@ HTML = """<!DOCTYPE html>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#e0e0e0;min-height:100vh}
 .header{padding:20px 24px;border-bottom:1px solid #1a1a1a;display:flex;align-items:center;justify-content:space-between}
-.header h1{font-size:22px;color:#fff;font-weight:700}.header h1 span{color:#ef4444}
+.header h1{font-size:22px;color:#fff;font-weight:700}.header h1 span{color:#60a5fa}
 .header .sub{font-size:13px;color:#666}
 .main{max-width:800px;margin:0 auto;padding:24px}
 
 .btn{display:inline-block;padding:12px 24px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
-.btn-red{background:#dc2626;color:#fff}
-.btn-red:hover{background:#b91c1c}
+.btn-red{background:#2563eb;color:#fff}
+.btn-red:hover{background:#1d4ed8}
 .btn-outline{background:transparent;color:#999;border:1px solid #333}
 .btn-outline:hover{background:#111;color:#fff}
 .btn:disabled{opacity:0.3;cursor:default}
 
 /* Upload zone */
 .dropzone{border:2px dashed #333;border-radius:12px;padding:48px 24px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:20px}
-.dropzone:hover,.dropzone.dragover{border-color:#ef4444;background:rgba(220,38,38,0.05)}
+.dropzone:hover,.dropzone.dragover{border-color:#2563eb;background:rgba(37,99,235,0.05)}
 .dropzone h2{font-size:20px;color:#fff;margin-bottom:8px}
 .dropzone p{color:#666;font-size:14px}
 .dropzone .formats{font-size:12px;color:#555;margin-top:12px}
@@ -282,15 +282,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .analysis h3{font-size:15px}
 .analysis ul,.analysis ol{padding-left:20px;margin:8px 0}
 .analysis li{margin:4px 0}
-.analysis strong{color:#ef4444}
+.analysis strong{color:#fff}
 .analysis code{background:#1a1a2e;padding:2px 6px;border-radius:3px;font-size:13px}
-.analysis blockquote{border-left:3px solid #ef4444;padding-left:12px;margin:12px 0;color:#999}
+.analysis blockquote{border-left:3px solid #333;padding-left:12px;margin:12px 0;color:#999}
 
 /* Chat */
 .chat{margin-top:20px}
 .chat-input{display:flex;gap:8px;margin-top:12px}
 .chat-input input{flex:1;padding:12px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:15px;outline:none}
-.chat-input input:focus{border-color:#ef4444}
+.chat-input input:focus{border-color:#2563eb}
 .chat-msg{padding:12px;border-radius:8px;margin-bottom:8px;font-size:14px;line-height:1.6}
 .chat-user{background:#1a1a2e;border:1px solid #312e81;color:#a78bfa}
 .chat-ai{background:#111;border:1px solid #222;color:#ccc}
@@ -298,7 +298,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 /* Questions */
 .questions{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0}
 .q-btn{padding:6px 12px;background:#111;border:1px solid #333;border-radius:6px;color:#999;font-size:13px;cursor:pointer;transition:all .15s}
-.q-btn:hover{border-color:#ef4444;color:#fff}
+.q-btn:hover{border-color:#2563eb;color:#fff}
 
 /* Export */
 .export-box{background:#0a0a0a;border:1px solid #333;border-radius:8px;padding:12px;font-family:monospace;font-size:12px;max-height:200px;overflow-y:auto;color:#888;margin-top:12px}
