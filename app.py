@@ -341,8 +341,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <div class="files" id="fileList"></div>
 
     <div class="actions">
-      <button class="btn btn-red" id="analyzeBtn" onclick="runAnalysis()">Analyze</button>
-      <button class="btn btn-outline" id="exportBtn" onclick="exportContext()">Export for AI Chat</button>
+      <button class="btn btn-red" id="analyzeBtn" onclick="exportAndOpen()">Analyze with Claude</button>
+      <button class="btn btn-outline" onclick="exportAndOpen('chatgpt')">Analyze with ChatGPT</button>
+      <button class="btn btn-outline" onclick="exportAndOpen('gemini')">Analyze with Gemini</button>
       <button class="btn btn-outline" onclick="reset()">Start Over</button>
     </div>
 
@@ -540,6 +541,42 @@ async function scanFolder() {
   document.getElementById('apiStatus').innerHTML = data.has_api_key ? '<span style="color:#22c55e">API connected</span>' : '<span style="color:#f59e0b">Demo mode</span>';
   document.getElementById('uploadState').style.display = 'none';
   document.getElementById('analysisState').style.display = 'block';
+}
+
+async function exportAndOpen(target) {
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true; btn.textContent = 'Preparing...';
+
+  const r = await fetch('/api/export', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({session_id: sessionId})
+  });
+  const data = await r.json();
+
+  if (data.ok) {
+    exportText = data.export;
+    await navigator.clipboard.writeText(data.export);
+
+    const urls = {
+      'chatgpt': 'https://chatgpt.com/',
+      'gemini': 'https://gemini.google.com/app',
+    };
+    const url = urls[target] || 'https://claude.ai/new';
+
+    // Show instructions
+    const msg = document.getElementById('chatMessages');
+    document.getElementById('chatBox').style.display = 'block';
+    msg.innerHTML = '<div class="chat-msg chat-ai">' +
+      '<strong>Context copied to clipboard.</strong><br><br>' +
+      'A new tab is opening. Just paste (Ctrl+V) into the chat and press Enter.<br><br>' +
+      'The AI will analyze your documents and provide critical feedback. You can then have a back-and-forth conversation about any points it raises.' +
+      '</div>';
+
+    window.open(url, '_blank');
+  }
+
+  btn.disabled = false; btn.textContent = 'Analyze with Claude';
 }
 
 function reset() {
