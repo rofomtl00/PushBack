@@ -115,40 +115,20 @@ def _detect_type(files: list, context: str) -> dict:
 
 
 def _build_prompt(session: dict) -> str:
-    """Build the analysis prompt. Let the AI determine context — don't guess."""
+    """One prompt. The AI figures out the rest."""
     s = session
     files = s["files"]
     context = s["context"]
-    benchmarks = get_benchmarks_for_text(context)
-    bench_text = format_benchmarks_for_prompt(benchmarks)
-    questions = s.get("questions", [])
-    q_text = "\n".join(f"- {q}" for q in questions) if questions else ""
+    file_list = "\n".join(f"- {f['filename']} ({f['size_kb']} KB)" for f in files)
 
-    file_list = "\n".join(f"- {f['filename']} ({f['size_kb']} KB, {f['type']})" for f in files)
+    return f"""Here are {len(files)} files from a project. Read everything, then:
 
-    return f"""I'm uploading documents for a critical review.
+1. Tell me what this is — the project, the industry, the purpose, the stage.
+2. Give me your toughest, most specific feedback. Not generic advice. Cite exact files, numbers, or text.
+3. Tell me what's good, what's weak, what's missing, and what could fail.
+4. End with one paragraph: what should the creator do next?
 
-## Step 1: Understand what this is
-Before analyzing, read through the documents and write a brief summary:
-- What is this project/product/business?
-- What problem does it solve and who is the target user?
-- What stage is it at (idea, MVP, launched, scaling)?
-- What industry does it belong to?
-
-## Step 2: Evaluate
-Based on your understanding, provide a thorough review:
-- What are the strengths — what's done well?
-- What are the weaknesses — what needs improvement?
-- What risks or gaps exist?
-- What's missing that should be here?
-- How does this compare to competitors or industry standards?
-{f"{chr(10)}Use these industry benchmarks to evaluate the numbers:{chr(10)}{bench_text}" if bench_text else ""}
-{f"{chr(10)}These specific questions were flagged during document scanning:{chr(10)}{q_text}" if q_text else ""}
-
-## Step 3: Bottom Line
-End with a clear recommendation: what should the creator focus on next to make this succeed?
-
-## Documents ({len(files)} files)
+## Files
 {file_list}
 
 ## Contents
@@ -228,7 +208,7 @@ def analyze_docs():
 
     s = sessions[sid]
     prompt = _build_prompt(s)
-    system = "You are PushBack — a senior advisor who gives direct, specific, evidence-based feedback. Cite exact numbers and documents. No generic advice."
+    system = "You are PushBack. You give direct, specific, evidence-based feedback on any type of project — business, code, creative, financial. You read the actual documents, understand the context, and respond with the kind of feedback a trusted senior advisor would give. Never generic. Always cite specific files, numbers, or text."
 
     result = _call_ai(system, prompt)
     s["analysis"] = result
