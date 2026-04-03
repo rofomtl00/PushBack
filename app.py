@@ -49,6 +49,13 @@ ALLOWED_EXTENSIONS = {
     ".cpp", ".c", ".h", ".rb", ".php", ".swift", ".kt",
     ".html", ".css", ".scss", ".sql", ".sh",
     ".json", ".yaml", ".yml", ".toml",
+    # Film
+    ".fdx", ".fountain",
+    # Code
+    ".py", ".js", ".ts", ".tsx", ".jsx", ".go", ".rs", ".java",
+    ".cpp", ".c", ".h", ".rb", ".php", ".swift", ".kt",
+    ".html", ".css", ".scss", ".sql", ".sh",
+    ".json", ".yaml", ".yml", ".toml",
     # Film/creative
     ".fdx", ".fountain",  # Screenwriting formats
 }
@@ -163,8 +170,13 @@ Start with the single most important finding. Be specific — cite exact numbers
     if server_key:
         try:
             from openai import OpenAI
-            # Grok uses OpenAI-compatible API
-            if server_key.startswith("xai-"):
+            # Auto-detect provider from key prefix
+            if server_key.startswith("gsk_"):
+                # Groq — free, fast, OpenAI-compatible
+                client = OpenAI(api_key=server_key, base_url="https://api.groq.com/openai/v1")
+                model = "llama-3.3-70b-versatile"
+            elif server_key.startswith("xai-"):
+                # xAI Grok
                 client = OpenAI(api_key=server_key, base_url="https://api.x.ai/v1")
                 model = "grok-3-mini"
             elif server_key.startswith("sk-ant-"):
@@ -234,7 +246,10 @@ def chat():
                 {"role": "assistant", "content": s["analysis"]},
                 {"role": "user", "content": question},
             ]
-            if server_key.startswith("xai-"):
+            if server_key.startswith("gsk_"):
+                client = OpenAI(api_key=server_key, base_url="https://api.groq.com/openai/v1")
+                model = "llama-3.3-70b-versatile"
+            elif server_key.startswith("xai-"):
                 client = OpenAI(api_key=server_key, base_url="https://api.x.ai/v1")
                 model = "grok-3-mini"
             elif server_key.startswith("sk-ant-"):
