@@ -465,7 +465,7 @@ def export_context():
     if has_gfx:
         focus_areas.append("VFX/GFX BUDGET REVIEW: Per-shot vs lump sum costing. Render farm costs (cloud vs local). Revision policy and scope creep risk. Vendor delivery timelines. Shot count vs budget alignment.")
     if not focus_areas:
-        focus_areas.append("GENERAL REVIEW: Identify the strongest and weakest parts of this work. What's missing? What questions should be asked before proceeding?")
+        focus_areas.append("GENERAL REVIEW: First, identify what type of documents these are and what industry they relate to. Then identify the strongest and weakest parts. What's missing? What questions should be asked before proceeding? If you're unsure about the context, state your assumptions clearly before analyzing.")
 
     focus_text = "\n\n".join(f"### {fa}" for fa in focus_areas)
 
@@ -682,6 +682,7 @@ Start with the single most important insight you see in this data — the one th
 - For every timeline: what's the realistic version? What happens when things take 2x longer?
 - Don't list 20 minor issues. Focus on the 5 things that matter most.
 - Quote the specific text, number, or slide you're challenging.
+- If you're unsure what industry or context these documents belong to, state that upfront and ask clarifying questions before diving into analysis. Don't assume.
 - End with a "Bottom Line" — one paragraph: if this landed on your desk, would you sign off?
 
 {format_benchmarks_for_prompt(get_benchmarks_for_text(context))}
