@@ -774,11 +774,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     </div>
     <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.csv,.txt,.md,.png,.jpg,.jpeg,.gif,.webp" style="display:none">
     <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none">
-    <div style="display:flex;gap:8px;margin-top:12px">
-      <input type="text" id="chatUrl" placeholder="Or paste a conversation URL to review" style="flex:1;padding:10px 12px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:14px;outline:none">
-      <button class="btn btn-outline" onclick="reviewChat()">Review</button>
-    </div>
-    <div style="font-size:11px;color:#555;margin-top:4px;text-align:center">Supports ChatGPT share links · Claude share links · any public AI conversation</div>
   </div>
 
   <!-- Analysis state -->
