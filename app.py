@@ -164,7 +164,7 @@ This lets the reader confirm you understood their work before reading your feedb
 {file_map}
 
 ## Full Contents
-{context[:30000]}"""
+{context[:100000]}"""
 
 
 # ═══════════════════════════════════════════════
