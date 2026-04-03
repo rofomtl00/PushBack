@@ -25,6 +25,8 @@ UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 sessions = {}
+_rate_limits = {}  # IP → {count, reset_time}
+MAX_ANALYSES_PER_HOUR = 20
 
 # ═══════════════════════════════════════════════
 # AI CLIENT — single function, auto-detects provider
@@ -156,9 +158,11 @@ This lets the reader confirm you understood their work before reading your feedb
 1. What's strong — acknowledge what works before critiquing.
 2. What's weak — be specific. Don't say "could be improved." Say exactly what's wrong and why it matters.
 3. What's missing — what would a world-class version of this project include that this one doesn't?
-4. Hard questions — ask 3-5 questions the creator probably hasn't considered. Not textbook questions. The kind that make someone pause and rethink their approach. Base them on what you actually read, not generic frameworks.
-5. What could fail — if this ships/launches/goes live tomorrow, what breaks first?
-6. One paragraph: what should the creator focus on next to make the biggest impact?
+4. Cross-document check — if multiple files contain overlapping data (numbers, claims, dates), verify they're consistent. Flag any discrepancies.
+5. Hard questions — ask 3-5 questions the creator probably hasn't considered. The kind that make someone pause. Base them on what you actually read.
+6. Downside scenario — model what happens if the key assumption is wrong. "If X drops 50%, then Y."
+7. What could fail — if this ships/launches/goes live tomorrow, what breaks first?
+8. One paragraph: what should the creator focus on next to make the biggest impact?
 
 ## File Architecture
 {file_map}
@@ -190,9 +194,25 @@ def upload():
     os.makedirs(session_dir, exist_ok=True)
 
     saved = []
+    total_size = 0
+    MAX_FILE_SIZE = 50 * 1024 * 1024   # 50MB per file
+    MAX_TOTAL_SIZE = 200 * 1024 * 1024  # 200MB total
+    MAX_FILES = 50
+
     for f in files:
         if not f.filename:
             continue
+        if len(saved) >= MAX_FILES:
+            break
+        # Check file size before saving
+        f.seek(0, 2)
+        size = f.tell()
+        f.seek(0)
+        if size > MAX_FILE_SIZE:
+            continue  # Skip files over 50MB
+        total_size += size
+        if total_size > MAX_TOTAL_SIZE:
+            break
         path = os.path.join(session_dir, f"{len(saved)}_{f.filename}")
         f.save(path)
         saved.append(path)
@@ -238,6 +258,20 @@ def analyze_docs():
     if sid not in sessions:
         return jsonify({"ok": False, "error": "Session not found"}), 404
 
+    # Rate limit — prevent API cost abuse
+    import time
+    ip = request.remote_addr or "unknown"
+    now = time.time()
+    if ip in _rate_limits:
+        rl = _rate_limits[ip]
+        if now - rl["reset"] > 3600:
+            _rate_limits[ip] = {"count": 0, "reset": now}
+        elif rl["count"] >= MAX_ANALYSES_PER_HOUR:
+            return jsonify({"ok": False, "error": "Rate limit reached. Please try again in an hour."}), 429
+    else:
+        _rate_limits[ip] = {"count": 0, "reset": now}
+    _rate_limits[ip]["count"] += 1
+
     s = sessions[sid]
     prompt = _build_prompt(s)
     system = """You are PushBack — a world-class advisor who has deep expertise across every industry. You review any type of project and give feedback that the creator's own team won't.
@@ -245,10 +279,12 @@ def analyze_docs():
 You may receive business documents, code, creative projects (film, music, design, 3D), medical files, engineering files, or anything else. Some files may be binary (video, audio, images, project files) — you won't see their contents, but use the filenames, file types, sizes, and any accompanying text files to understand the full project.
 
 Your standards:
-- You compare everything to the best in its category. If it's a SaaS product, you know what best-in-class SaaS metrics look like. If it's a film budget, you know what A24 or Blumhouse would do. If it's code, you know how Stripe or Linear would build it. If it's a pitch deck, you know what Sequoia expects.
-- You cite real industry data, benchmarks, and recent examples (2024-2026) when making comparisons. Name specific companies, products, or studies.
-- You ask the questions that a $500/hour consultant would ask — not textbook questions, but the ones that expose the real blind spots.
-- You never say "this could be improved" without saying exactly how and pointing to a specific example of someone who does it better.
+- You compare everything to the best in its category. Name specific companies (A24, Stripe, Sequoia, McKinsey, Blumhouse, etc.) and cite real data from 2024-2026.
+- When you find a number (revenue, cost, rate, metric), immediately compare it to the industry benchmark. If it's 50% worse than average, say so with the specific comparison.
+- When multiple files contain overlapping data, cross-validate them. If a pitch deck claims 20% growth but a spreadsheet shows 5%, flag the discrepancy explicitly.
+- You ask the questions that a $500/hour consultant would ask — the ones that expose blind spots, not textbook questions.
+- You never say "this could be improved" without saying exactly how and pointing to someone who does it better.
+- Model downside scenarios: "If [key assumption] is wrong by 50%, here's what happens to the plan."
 - If you can't fully assess something because files are binary, say what additional information you'd need."""
 
     result = _call_ai(system, prompt)
