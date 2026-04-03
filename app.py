@@ -39,8 +39,18 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 sessions = {}  # session_id → {files, analysis, chat_history, context}
 
 ALLOWED_EXTENSIONS = {
+    # Documents
     ".pdf", ".docx", ".doc", ".xlsx", ".xls", ".pptx", ".ppt",
-    ".csv", ".txt", ".md", ".png", ".jpg", ".jpeg", ".gif", ".webp",
+    ".csv", ".txt", ".md",
+    # Images
+    ".png", ".jpg", ".jpeg", ".gif", ".webp",
+    # Code
+    ".py", ".js", ".ts", ".tsx", ".jsx", ".go", ".rs", ".java",
+    ".cpp", ".c", ".h", ".rb", ".php", ".swift", ".kt",
+    ".html", ".css", ".scss", ".sql", ".sh",
+    ".json", ".yaml", ".yml", ".toml",
+    # Film/creative
+    ".fdx", ".fountain",  # Screenwriting formats
 }
 
 
@@ -292,6 +302,9 @@ def export_context():
     has_claims = any(w in text_lower for w in ["we will", "we plan", "our goal", "we expect", "projected", "forecast", "target", "strategy", "vision", "opportunity", "advantage", "believe", "anticipate"])
     is_raw_data = not has_claims and any(f.get("type") in (".xlsx", ".xls", ".csv") for f in s["files"])
     is_presentation = not has_claims and any(f.get("type") == ".pptx" for f in s["files"])
+    is_script = any(w in text_lower for w in ["int.", "ext.", "fade in", "cut to", "dissolve", "scene", "intercut", "v.o.", "o.s."])
+    is_code = any(f.get("type") in (".py", ".js", ".ts", ".go", ".rs", ".java", ".cpp", ".c", ".rb", ".php") for f in s["files"])
+    is_film_project = any(w in text_lower for w in ["shooting schedule", "call sheet", "shot list", "storyboard", "production schedule", "wrap", "pre-production", "principal photography"])
     has_financials = any(w in text_lower for w in ["revenue", "profit", "margin", "cost", "budget", "forecast", "p&l", "balance sheet", "cash flow"])
     has_strategy = any(w in text_lower for w in ["market", "competitor", "growth", "strategy", "roadmap", "vision"])
     has_projections = any(w in text_lower for w in ["projection", "forecast", "estimate", "expected", "anticipated", "q1", "q2", "q3", "q4"])
@@ -372,7 +385,86 @@ Quote specific exchanges. Name specific gaps. No generic observations.
 Start with the single most dangerous conclusion from this conversation — the one that could cost the most money or time if acted on without further validation.
 """
     else:
-        if is_presentation and not has_claims:
+        if is_script:
+            export = f"""You are an experienced script reader and development executive. Review this screenplay/script with a critical eye.
+
+## Your Coverage Report Should Address:
+1. **Premise** — Is the concept clear and compelling? Can you describe it in one sentence? If not, the script has a focus problem.
+2. **Structure** — Does it follow a clear three-act structure? Where are the act breaks? Is the midpoint strong? Does the pacing drag anywhere?
+3. **Character** — Is the protagonist active or passive? What's their arc? Are supporting characters distinct or interchangeable? Is the antagonist compelling?
+4. **Dialogue** — Does each character have a unique voice? Is there on-the-nose exposition? Could you tell who's speaking without the character names?
+5. **Market viability** — What's the genre? Who's the audience? What comparable films exist? Is this producible at the implied budget?
+6. **Budget implications** — How many locations, cast members, VFX shots, night shoots, stunts? Each adds cost. Flag anything expensive.
+7. **Page count** — Standard is 1 page = 1 minute. Is the page count appropriate for the format (feature: 90-120, pilot: 30-60)?
+
+Be specific. Reference page numbers and scenes. Don't just say "the dialogue needs work" — quote the line and suggest a fix.
+
+{format_benchmarks_for_prompt(get_benchmarks_for_text(context))}
+
+## Script
+
+{context[:80000]}
+
+---
+
+Start with: RECOMMEND, CONSIDER, or PASS — and why in one paragraph.
+"""
+        elif is_code:
+            code_files = [f for f in s['files'] if f.get('type') in ('.py','.js','.ts','.go','.rs','.java','.cpp','.c','.rb','.php')]
+            export = f"""You are a senior software architect conducting a code review. Be thorough and direct.
+
+## Review:
+1. **Architecture** — Is the structure logical? Are responsibilities clearly separated? Any circular dependencies or god classes?
+2. **Bugs** — Look for: null/undefined access, race conditions, off-by-one errors, unhandled exceptions, resource leaks, SQL injection, XSS.
+3. **Performance** — N+1 queries, unbounded loops, missing indexes, unnecessary computation, memory leaks.
+4. **Security** — Hardcoded secrets, missing input validation, insecure defaults, missing auth checks.
+5. **Maintainability** — Is the code readable? Would a new developer understand it? Dead code? Duplicated logic?
+6. **Testing gaps** — What's untestable? What edge cases are missing? What would break if dependencies change?
+7. **Dependencies** — Are they current? Any known vulnerabilities? Over-reliance on a single library?
+
+Don't comment on formatting or style. Focus on things that could cause failures, data loss, security breaches, or scaling problems.
+
+## Files ({len(code_files)} code files, {len(s['files'])} total)
+{file_list}
+
+{_build_doc_map(s['files'], context)}
+
+## Code
+
+{context[:80000]}
+
+---
+
+Start with the single most critical issue — the one that would cause a production incident if deployed.
+"""
+        elif is_film_project:
+            export = f"""You are an experienced line producer reviewing a film production package. Your job is to find budget risks, schedule problems, and production gaps before they become expensive problems on set.
+
+## Review:
+1. **Budget reality** — Does the budget match the ambition? Are department allocations realistic? What's underfunded?
+2. **Schedule** — Are shooting days realistic for the page count? Company moves? Night shoots? Weather-dependent exteriors?
+3. **Crew and talent** — Are rates market-appropriate? Union or non-union implications? Key crew gaps?
+4. **Locations** — Permitted? Insured? Backup plans? Travel and housing for distant locations?
+5. **Post-production** — Is the post schedule realistic? VFX shot count vs budget? Music licensing?
+6. **Contingency** — Is there 10-15% contingency? What are the most likely overages?
+7. **Deliverables** — Distribution requirements met? Aspect ratios, color space, audio specs, closed captions?
+
+{format_benchmarks_for_prompt(get_benchmarks_for_text(context))}
+
+## Production Documents
+{file_list}
+
+{_build_doc_map(s['files'], context)}
+
+## Contents
+
+{context[:80000]}
+
+---
+
+Start with: the three things most likely to cause this production to go over budget or behind schedule.
+"""
+        elif is_presentation and not has_claims:
             export = f"""You are reviewing a business presentation. The slides contain data, charts, and bullet points but may not make explicit claims. Your job is to:
 
 1. **Interpret what's being communicated** — What story are these slides trying to tell? Is it clear or confusing?
