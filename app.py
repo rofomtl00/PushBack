@@ -90,6 +90,13 @@ def upload():
     # Parse all files
     parsed = parse_folder(saved_files)
 
+    # Delete files immediately after parsing — nothing stored
+    try:
+        import shutil
+        shutil.rmtree(session_dir)
+    except Exception:
+        pass
+
     # Generate quick questions and benchmarks (no API needed)
     questions = quick_questions(parsed["combined_text"])
     benchmarks = get_benchmarks_for_text(parsed["combined_text"])
@@ -704,7 +711,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
       <h2>Drop your files here</h2>
       <p>or click to browse</p>
-      <div class="formats">PDF · Word · Excel · PowerPoint · CSV · Images</div>
+      <div class="formats">PDF · Word · Excel · PowerPoint · CSV · Code · Scripts · Images</div>
+      <div style="margin-top:12px;font-size:12px;color:#555;line-height:1.5">Your files are parsed and immediately deleted. Nothing is stored.<br>Analysis happens on your own AI account — we never see the results.</div>
     </div>
     <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.csv,.txt,.md,.png,.jpg,.jpeg,.gif,.webp" style="display:none">
     <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none">
