@@ -141,6 +141,66 @@ def chat():
     return jsonify({"ok": True, "response": response})
 
 
+def _build_doc_map(files, context):
+    """Build a document architecture map showing what each file contains and how they relate."""
+    lines = []
+    for f in files:
+        name = f["filename"]
+        ftype = f["type"]
+        size = f["size_kb"]
+        tables = len(f.get("tables", []))
+        meta = f.get("metadata", {})
+
+        # Detect content type from filename and content
+        name_lower = name.lower()
+        content_type = "document"
+        if any(w in name_lower for w in ["financial", "budget", "p&l", "pnl", "revenue", "forecast", "model"]):
+            content_type = "financial model"
+        elif any(w in name_lower for w in ["pitch", "deck", "presentation", "investor"]):
+            content_type = "pitch deck"
+        elif any(w in name_lower for w in ["plan", "strategy", "roadmap"]):
+            content_type = "business plan"
+        elif any(w in name_lower for w in ["report", "analysis", "review"]):
+            content_type = "report"
+        elif ftype in (".xlsx", ".xls", ".csv"):
+            content_type = "spreadsheet data"
+        elif ftype == ".pptx":
+            content_type = "presentation"
+        elif ftype == ".pdf":
+            content_type = "PDF document"
+
+        desc = f"- **{name}** ({size} KB) — {content_type}"
+        if tables:
+            desc += f", contains {tables} table(s)"
+        if meta.get("pages"):
+            desc += f", {meta['pages']} pages"
+        if meta.get("slides"):
+            desc += f", {meta['slides']} slides"
+        if meta.get("sheets"):
+            desc += f", sheets: {', '.join(meta['sheets'])}"
+        lines.append(desc)
+
+    # Detect relationships between documents
+    relationships = []
+    names = [f["filename"].lower() for f in files]
+    if any("financial" in n or "model" in n or "budget" in n for n in names):
+        if any("plan" in n or "strategy" in n or "pitch" in n for n in names):
+            relationships.append("The financial data should support the claims in the business plan/pitch.")
+    if any("pitch" in n or "deck" in n for n in names):
+        if any(".xlsx" in n or ".csv" in n for n in names):
+            relationships.append("The spreadsheet data should be consistent with numbers presented in the pitch deck.")
+    if len(files) > 1:
+        relationships.append("Check for consistency across all documents — do the numbers and claims align?")
+
+    if relationships:
+        lines.append("")
+        lines.append("**Cross-document checks:**")
+        for r in relationships:
+            lines.append(f"- {r}")
+
+    return "\n".join(lines)
+
+
 @app.route("/api/export", methods=["POST"])
 def export_context():
     """Export document context for pasting into any AI chat.
@@ -198,8 +258,12 @@ def export_context():
 - If something is solid, say so briefly and move on.
 - End with a "Bottom Line" — one paragraph: would you proceed, invest, or approve based on what you see?
 
-## Documents ({len(s['files'])} files)
+## Document Architecture ({len(s['files'])} files)
+
 {file_list}
+
+### Document Map
+{_build_doc_map(s['files'], context)}
 
 ## Contents
 
