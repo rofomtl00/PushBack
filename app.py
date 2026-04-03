@@ -121,17 +121,39 @@ def _build_prompt(session: dict) -> str:
     context = s["context"]
     file_list = "\n".join(f"- {f['filename']} ({f['size_kb']} KB)" for f in files)
 
-    return f"""Here are {len(files)} files from a project. Read everything, then:
+    # Build file architecture
+    arch_lines = []
+    folders = {}
+    for f in files:
+        parts = f["filename"].split("/")
+        if len(parts) > 1:
+            folder = parts[0]
+            if folder not in folders:
+                folders[folder] = []
+            folders[folder].append(f["filename"])
+        tables = len(f.get("tables", []))
+        meta = f.get("metadata", {})
+        desc = f"- **{f['filename']}** ({f['size_kb']} KB)"
+        if meta.get("pages"): desc += f", {meta['pages']} pages"
+        if meta.get("slides"): desc += f", {meta['slides']} slides"
+        if meta.get("sheets"): desc += f", sheets: {', '.join(meta['sheets'])}"
+        if tables: desc += f", {tables} table(s)"
+        arch_lines.append(desc)
 
-1. Tell me what this is — the project, the industry, the purpose, the stage.
-2. Give me your toughest, most specific feedback. Not generic advice. Cite exact files, numbers, or text.
-3. Tell me what's good, what's weak, what's missing, and what could fail.
-4. End with one paragraph: what should the creator do next?
+    file_map = "\n".join(arch_lines)
 
-## Files
-{file_list}
+    return f"""Here are {len(files)} files from a project. Read everything carefully before responding.
 
-## Contents
+## What I need from you:
+1. Start with a brief summary of what this project is — the purpose, the industry, and the stage.
+2. Give your toughest, most specific feedback. Cite exact files, numbers, or text.
+3. Cover: what's strong, what's weak, what's missing, what could fail.
+4. End with one clear paragraph: what should the creator focus on next?
+
+## File Architecture
+{file_map}
+
+## Full Contents
 {context[:80000]}"""
 
 
