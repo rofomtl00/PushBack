@@ -697,12 +697,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .btn-outline:hover{background:#111;color:#fff}
 .btn:disabled{opacity:0.3;cursor:default}
 
-/* Upload zone */
-.dropzone{border:2px dashed #333;border-radius:12px;padding:48px 24px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:20px}
-.dropzone:hover,.dropzone.dragover{border-color:#2563eb;background:rgba(37,99,235,0.05)}
-.dropzone h2{font-size:20px;color:#fff;margin-bottom:8px}
-.dropzone p{color:#666;font-size:14px}
-.dropzone .formats{font-size:12px;color:#555;margin-top:12px}
+/* Upload */
 
 /* File list */
 .files{margin-bottom:20px}
@@ -766,14 +761,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <div class="main" id="app">
   <!-- Upload state -->
   <div id="uploadState">
-    <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
-      <h2>Drop your files here</h2>
-      <p>or click to browse</p>
-      <div class="formats">PDF · Word · Excel · PowerPoint · CSV · Code · Scripts · Images</div>
-      <div style="margin-top:12px;font-size:12px;color:#555;line-height:1.5">Your files are parsed and immediately deleted. Nothing is stored.<br>Analysis happens on your own AI account — we never see the results.</div>
+    <div style="text-align:center;padding:40px 20px">
+      <button class="btn btn-red" onclick="document.getElementById('fileInput').click()" style="font-size:18px;padding:16px 40px">Select Files</button>
+      <div style="margin-top:16px;font-size:14px;color:#666">PDF · Word · Excel · PowerPoint · CSV · Images</div>
+      <div style="margin-top:8px;font-size:12px;color:#444">Files are parsed and immediately deleted. Nothing is stored.</div>
     </div>
-    <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.csv,.txt,.md,.png,.jpg,.jpeg,.gif,.webp" style="display:none">
-    <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none">
+    <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.csv,.txt,.md,.png,.jpg,.jpeg,.gif,.webp,.py,.js,.ts,.go,.java,.json,.yaml,.yml,.sh,.html,.css" style="display:none">
   </div>
 
   <!-- Analysis state -->
@@ -818,24 +811,15 @@ let sessionId = null;
 let exportText = '';
 
 // File upload
-const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('fileInput');
-
-dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
-dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
-dropzone.addEventListener('drop', e => {
-  e.preventDefault(); dropzone.classList.remove('dragover');
-  handleFiles(e.dataTransfer.files);
-});
 fileInput.addEventListener('change', () => handleFiles(fileInput.files));
-document.getElementById('folderInput').addEventListener('change', function() { handleFiles(this.files); });
 
 async function handleFiles(files) {
   if (!files.length) return;
   const form = new FormData();
   for (const f of files) form.append('files', f);
 
-  dropzone.innerHTML = '<h2>Scanning documents...</h2>';
+  document.getElementById('uploadState').innerHTML = '<div style="text-align:center;padding:40px"><div style="font-size:16px;color:#999">Reading documents...</div></div>';
 
   const r = await fetch('/api/upload', {method: 'POST', body: form});
   const data = await r.json();
