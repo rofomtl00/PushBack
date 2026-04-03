@@ -141,6 +141,64 @@ When reviewing a pitch or RFP response for a large retailer contract:
 - Vague "we'll customize it" without timeline/cost → scope creep incoming
 - No reference customers of similar size → unproven at enterprise scale
 - No uptime SLA with financial penalties → no accountability
+
+### Real Enterprise Examples — What You're Competing Against
+
+**Canadian Tire Corporation:**
+- $1.1B ecommerce sales (2024). 113M monthly visits. $3.4B "Better Connected" investment.
+- Tech stack: Microsoft Azure, BigQuery, Azure Synapse Analytics, Power BI, Temenos (banking).
+- Triangle Rewards: 54.4% of retail sales. ~11M members. $360M redeemed in 2024.
+- Runs 70-80 personalization experiments monthly.
+- $500M IT infrastructure modernization budget.
+- "One Digital Platform" across all banners (Canadian Tire, Sport Chek, Mark's, Party City).
+- Any vendor pitching to CTC competes against this existing investment. The question is: what do you add that they can't build internally?
+
+**BMW Group:**
+- Uses commercetools (headless/composable) as ecommerce backbone.
+- Consolidates car sales, accessories, digital services ("Functions on Demand"), and service booking into one platform.
+- Moving to direct sales in Europe by 2027 (bypassing dealers).
+- "Hundreds of millions" invested in digital transformation.
+- Any platform pitching to BMW competes against commercetools + BMW's internal engineering team.
+
+**Patrick Morin (Regional Retailer Example):**
+- 21 stores in Quebec. Hardware/renovation category.
+- Needs: French-first, regional inventory management, contractor accounts, bulk pricing.
+- Simpler than CTC but still needs BOPIS, POS integration, loyalty.
+- More likely to buy an off-the-shelf solution than build custom.
+- Price sensitivity higher — can't spend $1M on implementation.
+
+### How Global Consulting Firms Evaluate (Your Real Competition)
+When Canadian Tire or BMW issues an RFP, Accenture/Deloitte/McKinsey help evaluate vendors. Here's their framework:
+
+**Weighted Scorecard (typical enterprise RFP):**
+- Technical capability: 30% — does the platform meet all functional requirements?
+- Implementation track record: 20% — similar-size clients, on-time delivery history
+- Total cost of ownership: 20% — 3-5 year fully-loaded cost comparison
+- Security & compliance: 15% — SOC 2, PCI DSS, PIPEDA, penetration tests
+- Vendor viability: 15% — financial stability, team size, revenue trend, funding
+
+**What Gets You Past Round 1:**
+- Completed RFP response addressing every requirement (not "we can customize that")
+- 3+ reference customers of comparable size who will take a call
+- SOC 2 Type 2 report dated within 12 months
+- Live demo (not slides) showing the actual product
+- Clear TCO comparison vs Shopify Plus, SFCC, and current platform
+
+**What Gets You Past Round 2 (Shortlist → Winner):**
+- Proof of scalability (load test results, Black Friday performance data)
+- Migration plan with SEO preservation strategy and timeline
+- Named team members who will work on the account (not "we'll assign resources")
+- Risk mitigation plan (what happens if you miss deadlines, what are the penalties)
+- Executive sponsor from your company who matches their VP/CTO level
+- Cultural fit — enterprise buyers spend 3-7 years with a vendor. They're evaluating the relationship, not just the product.
+
+**What Accenture/Deloitte Would Flag in Your Pitch:**
+- Revenue concentration: if >30% of revenue comes from one client, that's a vendor viability risk
+- Team depth: if the CTO is also the lead developer, there's no bench. What happens if they leave?
+- IP ownership: does the client own the code, or is it licensed? Enterprise buyers want ownership.
+- Exit clause: what does unwinding the relationship look like? Data export, transition support, timeline.
+- Insurance: cyber liability, E&O, professional liability — minimums vary but $5-10M typical for enterprise contracts.
+- Subcontractor disclosure: if development is outsourced, enterprise procurement needs to know where and who.
 """
 
 
