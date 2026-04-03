@@ -152,28 +152,62 @@ def export_context():
 
     s = sessions[sid]
     file_list = "\n".join(f"- {f['filename']} ({f['size_kb']} KB)" for f in s["files"])
+    questions = s.get("questions", [])
+    context = s["context"]
 
-    export = f"""# PushBack — Business Document Context
+    # Detect what kind of documents these are
+    text_lower = context.lower()
+    has_financials = any(w in text_lower for w in ["revenue", "profit", "margin", "cost", "budget", "forecast", "p&l", "balance sheet", "cash flow"])
+    has_strategy = any(w in text_lower for w in ["market", "competitor", "growth", "strategy", "roadmap", "vision"])
+    has_projections = any(w in text_lower for w in ["projection", "forecast", "estimate", "expected", "anticipated", "q1", "q2", "q3", "q4"])
+    has_fundraise = any(w in text_lower for w in ["investor", "funding", "valuation", "raise", "series", "seed", "pitch"])
+    has_operations = any(w in text_lower for w in ["timeline", "milestone", "deadline", "resource", "headcount", "team"])
 
-I need you to act as a critical business advisor. Below are my business documents. Please:
+    # Build targeted analysis instructions based on what's in the documents
+    focus_areas = []
+    if has_financials:
+        focus_areas.append("FINANCIAL ANALYSIS: Check if revenue projections are bottom-up or top-down. Are costs realistic or understated? What happens to margins under stress? Is the burn rate sustainable?")
+    if has_projections:
+        focus_areas.append("PROJECTION REVIEW: What assumptions drive these numbers? What's the sensitivity — if the main assumption is off by 20%, does the whole model break? Are growth rates consistent with the market size?")
+    if has_strategy:
+        focus_areas.append("STRATEGY REVIEW: Is the competitive analysis complete or are indirect substitutes missing? Can this moat be replicated by a well-funded competitor in 12 months? What's the actual differentiation?")
+    if has_fundraise:
+        focus_areas.append("INVESTOR LENS: What would a skeptical VC ask in the first 5 minutes? Is the valuation justified by the metrics? What are the biggest risks that aren't disclosed?")
+    if has_operations:
+        focus_areas.append("EXECUTION RISK: Are the timelines realistic given the team size? What happens if key milestones slip 6 months? Is there enough runway for that?")
+    if not focus_areas:
+        focus_areas.append("GENERAL REVIEW: Identify the strongest and weakest parts of this work. What's missing? What questions should be asked before proceeding?")
 
-1. Challenge every assumption you find
-2. Identify logical gaps and missing data
-3. Flag financial red flags
-4. Point out competitive blind spots
-5. Tell me what could go wrong
-6. Be specific — cite the exact data point you're challenging
+    focus_text = "\n\n".join(f"### {fa}" for fa in focus_areas)
 
-## Documents Uploaded
+    # Include the pre-generated questions
+    questions_text = ""
+    if questions:
+        questions_text = "\n\nThese specific questions were flagged during document scanning — address them in your analysis:\n" + "\n".join(f"- {q}" for q in questions)
+
+    export = f"""You are a senior business advisor reviewing the following documents. Your job is to give a thorough, critical second opinion — not to agree or validate. Be specific. Cite exact numbers, claims, or sections when you push back.
+
+## Your Focus Areas (based on what's in these documents)
+
+{focus_text}
+{questions_text}
+
+## Rules
+- Be direct. Don't soften criticism with excessive praise.
+- Every concern must cite the specific document, number, or claim it refers to.
+- If something is solid, say so briefly and move on.
+- End with a "Bottom Line" — one paragraph: would you proceed, invest, or approve based on what you see?
+
+## Documents ({len(s['files'])} files)
 {file_list}
 
-## Document Contents
+## Contents
 
-{s['context'][:80000]}
+{context[:80000]}
 
 ---
 
-Please start with your critical analysis, then I'll respond to your challenges.
+Start your analysis now. After you finish, I'll respond to your points and we can go back and forth.
 """
 
     return jsonify({"ok": True, "export": export, "chars": len(export)})
