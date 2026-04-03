@@ -124,6 +124,12 @@ def _get_vertical_context(files, context):
             return VERTICAL_CONTEXT
     except Exception:
         pass
+    try:
+        from verticals.vfx_film import detect_vfx_film, VERTICAL_CONTEXT as VFX_CONTEXT
+        if detect_vfx_film(files, context):
+            return VFX_CONTEXT
+    except Exception:
+        pass
     # Add more verticals here as they're built
     return ""
 
