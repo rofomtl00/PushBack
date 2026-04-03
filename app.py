@@ -709,7 +709,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   <!-- Upload state -->
   <div id="uploadState">
     <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
-      <h2>Drop your files here</h2>
+      <h2>Drop your files or folder here</h2>
       <p>or click to browse</p>
       <div class="formats">PDF · Word · Excel · PowerPoint · CSV · Code · Scripts · Images</div>
       <div style="margin-top:12px;font-size:12px;color:#555;line-height:1.5">Your files are parsed and immediately deleted. Nothing is stored.<br>Analysis happens on your own AI account — we never see the results.</div>
