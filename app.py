@@ -329,15 +329,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   <div id="uploadState">
     <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
       <h2>Drop your files here</h2>
-      <p>or click to browse files · <a onclick="document.getElementById('folderInput').click();event.stopPropagation()" style="color:#ef4444;cursor:pointer;text-decoration:underline">upload a folder</a></p>
-      <div class="formats">PDF, Word, Excel, PowerPoint, CSV, TXT, Images</div>
+      <p>or click to browse</p>
+      <div class="formats">PDF · Word · Excel · PowerPoint · CSV · Images</div>
     </div>
     <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.csv,.txt,.md,.png,.jpg,.jpeg,.gif,.webp" style="display:none">
     <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none">
-    <div style="display:flex;gap:8px;margin-top:12px">
-      <input type="text" id="folderPath" placeholder="Or enter a folder path: /home/user/Documents/project" style="flex:1;padding:10px 12px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:14px;outline:none">
-      <button class="btn btn-outline" onclick="scanFolder()">Scan</button>
-    </div>
   </div>
 
   <!-- Analysis state -->
