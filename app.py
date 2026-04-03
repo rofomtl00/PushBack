@@ -156,18 +156,46 @@ Documents:
 Start with the single most important finding. Be specific — cite exact numbers and documents."""
 
     # Use server's API key — executive never sees it
+    # Supports: Grok (xAI), Anthropic (Claude), OpenAI (ChatGPT)
     server_key = os.environ.get("PUSHBACK_API_KEY", "")
+    system_msg = "You are PushBack — a senior business advisor. Your job is to find what's wrong, what's missing, and what could fail. Be direct. Cite specific numbers. Compare to industry benchmarks when provided. End with a Bottom Line: would you approve, invest, or proceed?"
+
     if server_key:
         try:
-            import anthropic
-            client = anthropic.Anthropic(api_key=server_key)
-            response = client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=4096,
-                system="You are PushBack — a senior business advisor. Your job is to find what's wrong, what's missing, and what could fail. Be direct. Cite specific numbers. Compare to industry benchmarks when provided. End with a Bottom Line: would you approve, invest, or proceed?",
-                messages=[{"role": "user", "content": full_context}],
-            )
-            result = response.content[0].text
+            from openai import OpenAI
+            # Grok uses OpenAI-compatible API
+            if server_key.startswith("xai-"):
+                client = OpenAI(api_key=server_key, base_url="https://api.x.ai/v1")
+                model = "grok-3-mini"
+            elif server_key.startswith("sk-ant-"):
+                import anthropic
+                client = None  # Use anthropic client below
+            else:
+                client = OpenAI(api_key=server_key)
+                model = "gpt-4o"
+
+            if client:
+                # OpenAI-compatible (Grok, ChatGPT)
+                response = client.chat.completions.create(
+                    model=model,
+                    max_tokens=4096,
+                    messages=[
+                        {"role": "system", "content": system_msg},
+                        {"role": "user", "content": full_context},
+                    ],
+                )
+                result = response.choices[0].message.content
+            else:
+                # Anthropic (Claude)
+                import anthropic
+                aclient = anthropic.Anthropic(api_key=server_key)
+                response = aclient.messages.create(
+                    model="claude-sonnet-4-20250514",
+                    max_tokens=4096,
+                    system=system_msg,
+                    messages=[{"role": "user", "content": full_context}],
+                )
+                result = response.content[0].text
         except Exception as e:
             result = f"Analysis error: {e}. Please try again."
     else:
@@ -196,22 +224,37 @@ def chat():
 
     # Use server API key for follow-up conversation
     server_key = os.environ.get("PUSHBACK_API_KEY", "")
+    system_chat = "You are PushBack. Continue your critical analysis. Stay specific. Push back when the user defends weak points. Acknowledge when they have good answers."
     if server_key and s.get("analysis"):
         try:
-            import anthropic
-            client = anthropic.Anthropic(api_key=server_key)
+            from openai import OpenAI
             messages = [
-                {"role": "user", "content": f"Here are business documents I need reviewed:\n\n{s['context'][:40000]}"},
+                {"role": "system", "content": system_chat},
+                {"role": "user", "content": f"Documents:\n\n{s['context'][:40000]}"},
                 {"role": "assistant", "content": s["analysis"]},
                 {"role": "user", "content": question},
             ]
-            resp = client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=2048,
-                system="You are PushBack. Continue your critical analysis. Stay specific. Push back when the user defends weak points. Acknowledge when they have good answers.",
-                messages=messages,
-            )
-            response = resp.content[0].text
+            if server_key.startswith("xai-"):
+                client = OpenAI(api_key=server_key, base_url="https://api.x.ai/v1")
+                model = "grok-3-mini"
+            elif server_key.startswith("sk-ant-"):
+                import anthropic
+                aclient = anthropic.Anthropic(api_key=server_key)
+                ant_msgs = [
+                    {"role": "user", "content": f"Documents:\n\n{s['context'][:40000]}"},
+                    {"role": "assistant", "content": s["analysis"]},
+                    {"role": "user", "content": question},
+                ]
+                resp = aclient.messages.create(model="claude-sonnet-4-20250514", max_tokens=2048, system=system_chat, messages=ant_msgs)
+                response = resp.content[0].text
+                s["chat_history"].append({"role": "assistant", "content": response})
+                return jsonify({"ok": True, "response": response})
+            else:
+                client = OpenAI(api_key=server_key)
+                model = "gpt-4o"
+
+            resp = client.chat.completions.create(model=model, max_tokens=2048, messages=messages)
+            response = resp.choices[0].message.content
         except Exception as e:
             response = f"Error: {e}"
     else:
