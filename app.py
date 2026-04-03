@@ -812,7 +812,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
         AI gives vague answers without context. PushBack reads your files, understands your industry, and delivers specific analysis grounded in your actual data.
       </div>
     </div>
-    <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.csv,.txt,.md,.png,.jpg,.jpeg,.gif,.webp,.py,.js,.ts,.go,.java,.json,.yaml,.yml,.sh,.html,.css" style="display:none">
+    <input type="file" id="fileInput" multiple style="display:none">
   </div>
 
   <!-- Analysis state -->
