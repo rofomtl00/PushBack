@@ -116,12 +116,25 @@ def _detect_type(files: list, context: str) -> dict:
     return {"type": "business", "label": "Business Analysis"}
 
 
+def _get_vertical_context(files, context):
+    """Check if any deep vertical knowledge applies. Returns context string or empty."""
+    try:
+        from verticals.ecommerce_platform import detect_ecommerce_platform, VERTICAL_CONTEXT
+        if detect_ecommerce_platform(files, context):
+            return VERTICAL_CONTEXT
+    except Exception:
+        pass
+    # Add more verticals here as they're built
+    return ""
+
+
 def _build_prompt(session: dict) -> str:
-    """One prompt. The AI figures out the rest."""
+    """One prompt. The AI figures out the rest. Injects vertical knowledge when relevant."""
     s = session
     files = s["files"]
     context = s["context"]
     file_list = "\n".join(f"- {f['filename']} ({f['size_kb']} KB)" for f in files)
+    vertical = _get_vertical_context(files, context)
 
     # Build file architecture
     arch_lines = []
@@ -166,6 +179,8 @@ This lets the reader confirm you understood their work before reading your feedb
 
 ## File Architecture
 {file_map}
+
+{vertical}
 
 ## Full Contents
 {context[:100000]}"""
