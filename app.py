@@ -585,15 +585,16 @@ fetch('/api/status').then(r => r.json()).then(d => {
 
 
 def main():
-    port = 8080
+    port = int(os.environ.get("PORT", 8080))
     print(f"")
     print(f"  PushBack")
     print(f"  http://localhost:{port}")
     if not ANTHROPIC_KEY:
-        print(f"  ⚠ Set PUSHBACK_API_KEY for full AI analysis")
-        print(f"    export PUSHBACK_API_KEY=your_key")
+        print(f"  Set PUSHBACK_API_KEY for full AI analysis")
     print(f"")
-    threading.Timer(1.0, lambda: webbrowser.open(f"http://localhost:{port}")).start()
+    # Only open browser if running locally
+    if port == 8080:
+        threading.Timer(1.0, lambda: webbrowser.open(f"http://localhost:{port}")).start()
     app.run(host="0.0.0.0", port=port, debug=False)
 
 
