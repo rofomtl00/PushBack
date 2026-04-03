@@ -765,8 +765,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <button class="btn btn-red" onclick="document.getElementById('fileInput').click()" style="font-size:18px;padding:16px 40px">Select Files</button>
       <div style="margin-top:16px;font-size:14px;color:#666">PDF · Word · Excel · PowerPoint · CSV · Images</div>
       <div style="margin-top:8px;font-size:12px;color:#444">Files are parsed and immediately deleted. Nothing is stored.</div>
-      <div style="margin-top:24px;max-width:500px;margin-left:auto;margin-right:auto;padding:16px;background:#111;border:1px solid #1a1a1a;border-radius:8px;text-align:left;font-size:13px;color:#888;line-height:1.6">
-        AI assistants give generic answers because they can't see your actual data. PushBack reads your documents, understands your industry, and gives the AI the context it needs to provide specific, informed analysis — not guesswork.
+      <div style="margin-top:24px;font-size:13px;color:#555">
+        AI gives vague answers without context. PushBack bridges the gap.
       </div>
     </div>
     <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.csv,.txt,.md,.png,.jpg,.jpeg,.gif,.webp,.py,.js,.ts,.go,.java,.json,.yaml,.yml,.sh,.html,.css" style="display:none">
