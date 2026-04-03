@@ -153,9 +153,12 @@ Write a short paragraph titled "What I'm Reviewing" that summarizes:
 This lets the reader confirm you understood their work before reading your feedback. If you're wrong, they can correct you.
 
 ## Then provide your analysis:
-1. Give your toughest, most specific feedback. Cite exact files, numbers, or text.
-2. Cover: what's strong, what's weak, what's missing, what could fail.
-3. End with one clear paragraph: what should the creator focus on next?
+1. What's strong — acknowledge what works before critiquing.
+2. What's weak — be specific. Don't say "could be improved." Say exactly what's wrong and why it matters.
+3. What's missing — what would a world-class version of this project include that this one doesn't?
+4. Hard questions — ask 3-5 questions the creator probably hasn't considered. Not textbook questions. The kind that make someone pause and rethink their approach. Base them on what you actually read, not generic frameworks.
+5. What could fail — if this ships/launches/goes live tomorrow, what breaks first?
+6. One paragraph: what should the creator focus on next to make the biggest impact?
 
 ## File Architecture
 {file_map}
