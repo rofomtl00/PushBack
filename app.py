@@ -766,7 +766,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div style="margin-top:16px;font-size:14px;color:#666">PDF · Word · Excel · PowerPoint · CSV · Images</div>
       <div style="margin-top:8px;font-size:12px;color:#444">Files are parsed and immediately deleted. Nothing is stored.</div>
       <div style="margin-top:24px;font-size:13px;color:#555">
-        AI gives vague answers without context. PushBack bridges the gap.
+        AI gives vague answers without context. PushBack reads your files, understands your industry, and delivers specific analysis grounded in your actual data.
       </div>
     </div>
     <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.csv,.txt,.md,.png,.jpg,.jpeg,.gif,.webp,.py,.js,.ts,.go,.java,.json,.yaml,.yml,.sh,.html,.css" style="display:none">
