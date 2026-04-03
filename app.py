@@ -141,6 +141,73 @@ def chat():
     return jsonify({"ok": True, "response": response})
 
 
+@app.route("/api/review_chat", methods=["POST"])
+def review_chat():
+    """Fetch a shared AI conversation and build a critical review prompt."""
+    body = request.get_json() or {}
+    url = body.get("url", "").strip()
+    if not url:
+        return jsonify({"ok": False, "error": "No URL provided"}), 400
+
+    # Fetch the page
+    try:
+        import urllib.request
+        req = urllib.request.Request(url, headers={"User-Agent": "PushBack/1.0"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            html = resp.read().decode("utf-8", errors="ignore")
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"Could not fetch URL: {e}"}), 400
+
+    # Extract conversation text from HTML
+    # Strip tags to get raw text
+    import re
+    text = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL)
+    text = re.sub(r'<style[^>]*>.*?</style>', '', text, flags=re.DOTALL)
+    text = re.sub(r'<[^>]+>', '\n', text)
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    text = text.strip()
+
+    if len(text) < 100:
+        return jsonify({"ok": False, "error": "Could not extract conversation content. Make sure the link is a public/shared conversation."}), 400
+
+    # Truncate
+    if len(text) > 80000:
+        text = text[:80000] + "\n\n[Truncated]"
+
+    # Detect platform
+    platform = "AI conversation"
+    if "chatgpt" in url or "openai" in url:
+        platform = "ChatGPT conversation"
+    elif "claude" in url:
+        platform = "Claude conversation"
+    elif "gemini" in url:
+        platform = "Gemini conversation"
+
+    # Build the review prompt
+    questions = quick_questions(text)
+
+    sid = str(uuid.uuid4())[:8]
+    sessions[sid] = {
+        "files": [{"filename": f"{platform} ({url[:50]}...)", "type": ".url", "size_kb": round(len(text)/1024, 1)}],
+        "context": text,
+        "analysis": None,
+        "chat_history": [],
+        "questions": questions,
+        "source_url": url,
+        "platform": platform,
+        "created": datetime.now(timezone.utc).isoformat(),
+    }
+
+    return jsonify({
+        "ok": True,
+        "session_id": sid,
+        "platform": platform,
+        "chars": len(text),
+        "questions": questions,
+        "has_api_key": bool(ANTHROPIC_KEY),
+    })
+
+
 def _build_doc_map(files, context):
     """Build a document architecture map showing what each file contains and how they relate."""
     lines = []
@@ -245,18 +312,57 @@ def export_context():
     if questions:
         questions_text = "\n\nThese specific questions were flagged during document scanning — address them in your analysis:\n" + "\n".join(f"- {q}" for q in questions)
 
-    export = f"""You are a senior business advisor reviewing the following documents. Your job is to give a thorough, critical second opinion — not to agree or validate. Be specific. Cite exact numbers, claims, or sections when you push back.
+    # Different prompt for conversation reviews vs document reviews
+    is_chat_review = s.get("source_url") is not None
+    platform = s.get("platform", "AI conversation")
+
+    if is_chat_review:
+        export = f"""You are reviewing a {platform} between a human and an AI. Your job is to find every mistake, bad assumption, and missed opportunity on BOTH sides. Do not hold back.
+
+## Review the AI's responses:
+- Where did the AI agree when it should have pushed back? AI assistants are notoriously agreeable — find where it told the human what they wanted to hear instead of what they needed to hear.
+- Where did the AI make claims without data? Quote the specific statement and explain why it's unsupported.
+- Where did the AI oversimplify a complex issue? Business decisions have second and third order effects the AI probably ignored.
+- Did the AI miss obvious risks, competitors, or market dynamics?
+- Did the AI hallucinate any facts, statistics, or references?
+
+## Review the human's approach:
+- What questions should they have asked but didn't?
+- Where did they accept an answer too quickly without asking "how do you know that?" or "what's your source?"
+- What assumptions are they making that they never stated or tested?
+- Are they asking leading questions that bias the AI toward the answer they want?
+
+## What's missing from this entire conversation:
+- What critical topics were never raised?
+- What data should have been requested before making any decisions?
+- If you were sitting in this meeting, what would you interrupt to say?
+
+Quote specific exchanges. Name specific gaps. No generic observations.
+
+## Conversation
+
+{context[:80000]}
+
+---
+
+Start with the single most dangerous conclusion from this conversation — the one that could cost the most money or time if acted on without further validation.
+"""
+    else:
+        export = f"""You are reviewing the following business documents. Your job is to find what's wrong, what's missing, and what could fail. Do not validate — the person sharing these needs to hear what no one else will tell them.
 
 ## Your Focus Areas (based on what's in these documents)
 
 {focus_text}
 {questions_text}
 
-## Rules
-- Be direct. Don't soften criticism with excessive praise.
-- Every concern must cite the specific document, number, or claim it refers to.
-- If something is solid, say so briefly and move on.
-- End with a "Bottom Line" — one paragraph: would you proceed, invest, or approve based on what you see?
+## How to review:
+- Start with the single biggest risk you see. Not a minor formatting issue — the thing that could sink this.
+- For every number: where did it come from? Is it a guess dressed up as a forecast? Would it survive a board member asking "prove it"?
+- For every claim about the market or competition: is this based on data or hope? What evidence is missing?
+- For every timeline: what's the realistic version? What happens when things take 2x longer?
+- Don't list 20 minor issues. Focus on the 5 things that matter most.
+- Quote the specific text, number, or slide you're challenging.
+- End with a "Bottom Line" — one paragraph: if this landed on your desk, would you sign off?
 
 ## Document Architecture ({len(s['files'])} files)
 
@@ -432,6 +538,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     </div>
     <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.csv,.txt,.md,.png,.jpg,.jpeg,.gif,.webp" style="display:none">
     <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none">
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <input type="text" id="chatUrl" placeholder="Or paste a conversation URL to review" style="flex:1;padding:10px 12px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:14px;outline:none">
+      <button class="btn btn-outline" onclick="reviewChat()">Review</button>
+    </div>
+    <div style="font-size:11px;color:#555;margin-top:4px;text-align:center">Supports ChatGPT share links · Claude share links · any public AI conversation</div>
   </div>
 
   <!-- Analysis state -->
@@ -637,6 +748,32 @@ async function scanFolder() {
     document.getElementById('questions').innerHTML = qh;
   }
   document.getElementById('apiStatus').innerHTML = data.has_api_key ? '<span style="color:#22c55e">API connected</span>' : '<span style="color:#f59e0b">Demo mode</span>';
+  document.getElementById('uploadState').style.display = 'none';
+  document.getElementById('analysisState').style.display = 'block';
+}
+
+async function reviewChat() {
+  const url = document.getElementById('chatUrl').value.trim();
+  if (!url) return;
+  document.getElementById('dropzone').innerHTML = '<h2>Fetching conversation...</h2>';
+  const r = await fetch('/api/review_chat', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({url})
+  });
+  const data = await r.json();
+  if (!data.ok) {
+    document.getElementById('dropzone').innerHTML = '<h2>Could not fetch</h2><p>' + data.error + '</p>';
+    return;
+  }
+  sessionId = data.session_id;
+  document.getElementById('fileList').innerHTML = '<div class="file"><span class="name">' + data.platform + '</span><span class="size">' + Math.round(data.chars/1024) + ' KB</span><span class="status ok">✓</span></div>';
+  if (data.questions.length) {
+    document.getElementById('questionsBox').style.display = 'block';
+    let qh = '';
+    for (const q of data.questions) qh += '<button class="q-btn" onclick="askQuestion(this.textContent)">' + q + '</button>';
+    document.getElementById('questions').innerHTML = qh;
+  }
   document.getElementById('uploadState').style.display = 'none';
   document.getElementById('analysisState').style.display = 'block';
 }
