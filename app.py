@@ -281,10 +281,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   <div id="uploadState">
     <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
       <h2>Drop your files here</h2>
-      <p>or click to browse</p>
+      <p>or click to browse files · <a onclick="document.getElementById('folderInput').click();event.stopPropagation()" style="color:#ef4444;cursor:pointer;text-decoration:underline">upload a folder</a></p>
       <div class="formats">PDF, Word, Excel, PowerPoint, CSV, TXT, Images</div>
     </div>
     <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.csv,.txt,.md,.png,.jpg,.jpeg,.gif,.webp" style="display:none">
+    <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none">
   </div>
 
   <!-- Analysis state -->
@@ -339,6 +340,7 @@ dropzone.addEventListener('drop', e => {
   handleFiles(e.dataTransfer.files);
 });
 fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+document.getElementById('folderInput').addEventListener('change', function() { handleFiles(this.files); });
 
 async function handleFiles(files) {
   if (!files.length) return;
