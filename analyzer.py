@@ -125,37 +125,103 @@ Get an API key at: https://console.anthropic.com/
 
 
 def quick_questions(documents_text: str) -> list:
-    """Generate quick critical questions without full API call."""
+    """Generate industry-specific critical questions based on document content."""
     questions = []
+    t = documents_text.lower()
 
-    text_lower = documents_text.lower()
+    # ── DETECT INDUSTRY ──
+    is_ecommerce = any(w in t for w in ["ecommerce", "e-commerce", "shopify", "amazon", "online store", "cart", "checkout", "sku", "fulfillment", "dropship"])
+    is_saas = any(w in t for w in ["saas", "mrr", "arr", "churn", "subscription", "monthly recurring", "annual recurring", "seat", "license"])
+    is_retail = any(w in t for w in ["retail", "store", "inventory", "foot traffic", "same-store", "pos ", "point of sale"])
+    is_manufacturing = any(w in t for w in ["manufacturing", "supply chain", "cogs", "raw material", "factory", "production", "warehouse"])
+    is_real_estate = any(w in t for w in ["real estate", "property", "tenant", "lease", "cap rate", "noi ", "occupancy"])
+    is_fintech = any(w in t for w in ["fintech", "payment", "lending", "banking", "aml", "kyc", "compliance", "regulatory"])
+    is_healthcare = any(w in t for w in ["healthcare", "patient", "clinical", "fda", "hipaa", "pharma", "medical device"])
+    is_marketplace = any(w in t for w in ["marketplace", "two-sided", "supply and demand", "gmv", "take rate", "seller", "buyer"])
 
-    # Financial checks
-    if "revenue" in text_lower or "sales" in text_lower:
-        questions.append("What's the basis for your revenue projections? Is it bottom-up from customers or top-down from market size?")
-    if "growth" in text_lower:
-        questions.append("You mention growth — what's your customer acquisition cost and how does it scale?")
-    if "margin" in text_lower or "profit" in text_lower:
-        questions.append("Are your margin assumptions based on current operations or projected scale? How sensitive are they to input cost changes?")
-    if "market" in text_lower and "size" in text_lower:
-        questions.append("How did you calculate your addressable market? Are you confusing TAM with SAM?")
+    # ── ECOMMERCE SPECIFIC ──
+    if is_ecommerce:
+        if "cac" in t or "acquisition cost" in t:
+            questions.append("Your CAC — does it include all marketing spend, or just paid ads? What about attribution across channels?")
+        else:
+            questions.append("What's your customer acquisition cost? How does it compare to lifetime value? At what scale does CAC start increasing?")
+        if "conversion" in t:
+            questions.append("Your conversion rate — is this across all traffic or just qualified visitors? What's the mobile vs desktop split?")
+        if "shopify" in t or "platform" in t:
+            questions.append("Platform dependency — what percentage of your revenue relies on a single platform? What happens if they change their terms or algorithm?")
+        if "amazon" in t:
+            questions.append("Amazon takes 30-45% in fees. What's your actual margin after FBA, advertising, and returns? Is this sustainable at scale?")
+        questions.append("What's your return rate and how does it affect your unit economics? Are you accounting for restocking, shipping, and lost inventory?")
+        if "fulfillment" in t or "shipping" in t:
+            questions.append("Shipping costs are rising 5-10% annually. Are your shipping cost projections current or based on last year's rates?")
+        if "inventory" in t:
+            questions.append("What's your inventory turnover ratio? How much capital is tied up in unsold stock? What's your plan for dead inventory?")
 
-    # Strategy checks
-    if "competitor" in text_lower or "competition" in text_lower:
-        questions.append("You listed competitors — but what about indirect substitutes your customers currently use instead?")
-    if "advantage" in text_lower or "moat" in text_lower:
-        questions.append("Your competitive advantage — can a well-funded competitor replicate it in 12 months?")
-    if "team" in text_lower:
-        questions.append("Does your team have direct experience in this specific market, or adjacent experience you're hoping transfers?")
+    # ── SAAS SPECIFIC ──
+    if is_saas:
+        if "churn" in t:
+            questions.append("Your churn rate — is this logo churn or revenue churn? Are you measuring gross churn or net (including expansion)?")
+        else:
+            questions.append("What's your monthly churn rate? A 3% monthly churn means you lose 31% of customers annually. Is your growth outpacing this?")
+        if "ltv" in t or "lifetime value" in t:
+            questions.append("How did you calculate LTV? Are you using historical data or projections? What churn rate assumption does it rely on?")
+        questions.append("What's your payback period on CAC? If it's over 12 months, can you fund the gap?")
+        if "enterprise" in t:
+            questions.append("Enterprise sales cycles are 6-18 months. Does your cash runway account for this? What happens if 2 big deals slip a quarter?")
 
-    # Risk checks
-    if "risk" not in text_lower:
-        questions.append("Your documents don't mention risks. What's your biggest existential threat?")
-    if "timeline" in text_lower or "roadmap" in text_lower:
-        questions.append("Your timeline — what happens if key milestones slip by 6 months? Do you have runway for that?")
+    # ── MARKETPLACE SPECIFIC ──
+    if is_marketplace:
+        questions.append("Chicken-and-egg problem — how do you solve cold start? Which side are you subsidizing and for how long?")
+        questions.append("What's your take rate and how does it compare to competitors? At what point do sellers/buyers leave for a cheaper alternative?")
+        questions.append("Disintermediation risk — what stops buyers and sellers from going direct after they find each other on your platform?")
 
-    # Generic critical questions
-    questions.append("What would need to be true for this to fail? Have you stress-tested those assumptions?")
-    questions.append("If a skeptical board member had 2 minutes with this, what would they challenge first?")
+    # ── FINANCIAL QUESTIONS (any industry) ──
+    if "revenue" in t or "sales" in t:
+        questions.append("What's the basis for your revenue projections? Is it bottom-up from actual customers/pipeline, or top-down from market size?")
+    if "growth" in t and not is_ecommerce and not is_saas:
+        questions.append("You mention growth — what's the specific driver? Is it proven or assumed? What happens to the model if growth is half of what you projected?")
+    if "margin" in t or "profit" in t:
+        questions.append("Are your margin assumptions based on current unit economics or projected scale? Have you modeled what happens if input costs rise 15%?")
+    if "market" in t and ("size" in t or "tam" in t or "opportunity" in t):
+        questions.append("How did you calculate your addressable market? Are you confusing total market (TAM) with the segment you can actually reach (SAM)?")
+    if "fundrais" in t or "investor" in t or "raise" in t or "valuation" in t:
+        questions.append("What comparable companies justify your valuation? Have those comparables maintained their multiples in the current market?")
+        questions.append("If this round takes 3 months longer than expected, do you have enough runway? What's your Plan B?")
 
-    return questions[:8]
+    # ── STRATEGY QUESTIONS ──
+    if "competitor" in t or "competition" in t:
+        questions.append("You listed direct competitors — but what indirect substitutes do your customers currently use? Those are often the real threat.")
+    elif "market" in t:
+        questions.append("Who are your competitors — including indirect ones? What stops a large incumbent from adding your feature to their existing product?")
+    if "advantage" in t or "moat" in t or "differentiat" in t:
+        questions.append("Your competitive advantage — can a well-funded competitor replicate it in 12 months? What's your defensibility beyond first-mover?")
+    if "team" in t:
+        questions.append("Does the team have direct experience in this specific market and stage, or is it adjacent experience you're hoping transfers?")
+
+    # ── OPERATIONS ──
+    if "timeline" in t or "roadmap" in t or "milestone" in t:
+        questions.append("Your timeline — what happens if key milestones slip by 6 months? What dependencies could cause that? Do you have contingency?")
+    if "hire" in t or "headcount" in t or "team size" in t:
+        questions.append("Your hiring plan — in this market, how long does it actually take to fill these roles? What if key hires take 2x longer?")
+
+    # ── TREND / MACRO ──
+    if "ai " in t or "artificial intelligence" in t:
+        questions.append("You're positioning around AI — what happens when this capability becomes commoditized in 12-18 months? What's your moat beyond the tech?")
+    if "crypto" in t or "blockchain" in t or "web3" in t:
+        questions.append("What's the regulatory risk in your target markets? Have you budgeted for compliance costs?")
+
+    # ── RISK ──
+    if "risk" not in t:
+        questions.append("These documents don't mention risks. What's the biggest threat to this business that isn't discussed here?")
+
+    # ── ALWAYS ASK ──
+    questions.append("What single assumption, if proven wrong, would make this entire plan fail?")
+
+    # Deduplicate and limit
+    seen = set()
+    unique = []
+    for q in questions:
+        if q not in seen:
+            seen.add(q)
+            unique.append(q)
+    return unique[:10]
