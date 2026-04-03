@@ -144,11 +144,18 @@ def _build_prompt(session: dict) -> str:
 
     return f"""Here are {len(files)} files from a project. Read everything carefully before responding.
 
-## What I need from you:
-1. Start with a brief summary of what this project is — the purpose, the industry, and the stage.
-2. Give your toughest, most specific feedback. Cite exact files, numbers, or text.
-3. Cover: what's strong, what's weak, what's missing, what could fail.
-4. End with one clear paragraph: what should the creator focus on next?
+## Before you analyze, confirm your understanding:
+Write a short paragraph titled "What I'm Reviewing" that summarizes:
+- What this project is and what it does
+- Who it's for
+- What the creator is trying to achieve
+
+This lets the reader confirm you understood their work before reading your feedback. If you're wrong, they can correct you.
+
+## Then provide your analysis:
+1. Give your toughest, most specific feedback. Cite exact files, numbers, or text.
+2. Cover: what's strong, what's weak, what's missing, what could fail.
+3. End with one clear paragraph: what should the creator focus on next?
 
 ## File Architecture
 {file_map}
