@@ -182,6 +182,32 @@ This is where REAL money is saved — studios route work based on incentives:
 - Many budgets allocate <15% to post — guaranteeing overruns.
 - FIX: If post is less than 20% of total budget on a VFX-heavy project, challenge it immediately.
 
+### Location Intelligence (Match Scene to Jurisdiction)
+When reviewing scripts, budgets, or production plans, analyze each location/scene and evaluate:
+- Does the chosen filming location match the scene requirements? Mountains, desert, ocean, urban — each has optimal jurisdictions.
+- Is the production maximizing tax incentives for the chosen location?
+- Could a different jurisdiction offer the same look with better incentives?
+
+**Canadian location guide:**
+- Mountains/wilderness: Alberta (25% tax credit, Rockies, Banff, cheaper than BC). Also BC interior.
+- Urban/city: Toronto (Ontario 21.5% OCASE), Montreal (Quebec 20% + 16% federal = 36%), Vancouver (BC 33.5%)
+- Ocean/coastal: Nova Scotia (32% incentive + diverse coastline), Newfoundland (40% incentive, remote dramatic landscapes)
+- Winter/snow: Manitoba (65% cost advantage over Toronto, real winter), Saskatchewan
+- Desert/badlands: Alberta (Drumheller badlands, doubles for Mars/alien landscapes)
+- Small town America: Ontario small towns, Manitoba, Saskatchewan — tax credits + low permit costs
+- European doubling: Quebec City (doubles for Paris/Europe), Montreal Old Port, Halifax waterfront
+
+**US location guide:**
+- Mountains: Georgia (20-30% credit but limited mountain range), New Mexico (25-35%, desert + mountains)
+- Urban: New York (30% credit), Illinois/Chicago (30%), Georgia/Atlanta (30%)
+- Desert: New Mexico (25-35%, Breaking Bad territory), Utah (25%), Arizona (limited incentive)
+- Ocean: Hawaii (27%), Louisiana (25-40%)
+- Sci-fi/alien: New Mexico badlands, Iceland (no incentive but unmatched landscape)
+- Soundstage/VFX heavy: Georgia (Pinewood Atlanta), UK (Pinewood/Shepperton for 29.25% VFX rebate)
+
+**Example analysis PushBack should give:**
+"Your script has 15 mountain scenes filmed in Quebec. Alberta offers the same Rockies landscape with a 25% tax credit vs Quebec's 20% for non-VFX production spend. On a $5M location budget, that's $250K in additional savings. Plus Alberta has lower crew rates and no language requirement for non-Quebec talent."
+
 ### The Pitch PushBack Should Evaluate
 When reviewing a VFX studio pitch, RFP response, or production budget:
 - Is the cost-per-shot realistic for the quality tier? Compare to benchmarks above.
