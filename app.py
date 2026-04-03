@@ -155,7 +155,7 @@ def export_context():
 
     export = f"""# PushBack — Business Document Context
 
-I need you to act as a critical business advisor and devil's advocate. Below are my business documents. Please:
+I need you to act as a critical business advisor. Below are my business documents. Please:
 
 1. Challenge every assumption you find
 2. Identify logical gaps and missing data

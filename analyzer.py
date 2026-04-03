@@ -1,7 +1,7 @@
 """
 analyzer.py — AI Critical Analysis Engine
 ==========================================
-Sends parsed documents to Claude API with a devil's advocate prompt.
+Sends parsed documents to Claude API for critical business analysis.
 Returns structured critical analysis.
 """
 
@@ -10,7 +10,7 @@ import json
 
 ANTHROPIC_KEY = os.environ.get("PUSHBACK_API_KEY", "")
 
-SYSTEM_PROMPT = """You are PushBack — a senior business advisor and devil's advocate.
+SYSTEM_PROMPT = """You are PushBack — a senior business advisor.
 
 Your job is to critically analyze the documents provided and challenge the assumptions, logic, and conclusions. You are NOT a yes-man. You are paid to find problems before they cost money.
 
