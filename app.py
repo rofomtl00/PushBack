@@ -1028,6 +1028,7 @@ const startTime = Date.now();
 function checkReady() {
   fetch('/api/status').then(r => r.json()).then(d => {
     document.getElementById('apiStatus').innerHTML = '<span style="color:#22c55e">Ready</span>';
+    document.getElementById('apiStatus').style.display = 'none';
   }).catch(() => {
     const elapsed = Math.round((Date.now() - startTime) / 1000);
     document.getElementById('apiStatus').innerHTML = '<span style="color:#f59e0b">Starting up... ' + elapsed + 's</span>';
