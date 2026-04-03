@@ -136,6 +136,12 @@ def _get_vertical_context(files, context):
             return DEV_CONTEXT
     except Exception:
         pass
+    try:
+        from verticals.corporate_insurance import detect_corporate_insurance, VERTICAL_CONTEXT as INS_CONTEXT
+        if detect_corporate_insurance(files, context):
+            return INS_CONTEXT
+    except Exception:
+        pass
     # Add more verticals here as they're built
     return ""
 
