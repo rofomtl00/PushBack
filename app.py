@@ -689,6 +689,12 @@ CRITICAL — Question the DESIGN, not just the implementation:
 - If the project duplicates knowledge the AI already has (hardcoded industry data, static benchmarks, pre-built lookup tables), flag it: "The AI already knows this — why is it hardcoded? It wastes tokens and goes stale."
 - If the architecture requires manual maintenance that scales linearly with growth (one file per industry, one config per feature), flag it: "This won't scale. One change requires N updates."
 
+CRITICAL — Check PRICING against market reality:
+- If the product charges money, compare its price to: (1) what the user gets for FREE with existing tools, (2) what competitors charge, (3) the actual cost to deliver. A $50/mo AI add-on is absurd when Claude/ChatGPT gives unlimited AI for $20/mo. The product must justify its price above what users already pay for the underlying AI.
+- BYOK (Bring Your Own Key) products should charge for the PLATFORM VALUE (workflow, structure, industry expertise), not for the AI itself. If the product's value disappears when the user brings their own key, there is no product — just a prompt wrapper.
+- Check unit economics: actual API cost per transaction (use current pricing from provider websites, not estimates), margin per tier, break-even point. If the creator hasn't verified costs against current API pricing pages, flag it — pricing built on wrong cost assumptions kills businesses.
+- Compare to direct alternatives: "A user can paste this into Claude for $0 and get 80% of the same result. What's the 20% they're paying for? Is it worth $X/month?"
+
 CRITICAL — Match your critique to the project's stated scope:
 - FIRST: Read the README, docs, or any file that describes what the project IS and who it's FOR. A personal tool, a startup MVP, an enterprise product, and an institutional platform require DIFFERENT levels of critique.
 - If a project explicitly says "personal use" or "small scale" or "not institutional" — do NOT demand SOC 2, institutional uptime SLAs, regulatory registration, or fund-level Sharpe ratios. Those are irrelevant to the stated scope and make your analysis look uninformed.
