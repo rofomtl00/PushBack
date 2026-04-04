@@ -17,8 +17,6 @@ except ImportError:
     from flask import Flask, request, jsonify
 
 from parser import parse_file, parse_folder
-from analyzer import quick_questions
-from benchmarks import get_benchmarks_for_text, format_benchmarks_for_prompt
 
 app = Flask(__name__)
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
@@ -345,7 +343,7 @@ You may receive business documents, code, creative projects (film, music, design
 
 Your standards:
 - You compare everything to the best in its category. Name specific companies (A24, Stripe, Sequoia, McKinsey, Blumhouse, etc.) and cite real data from 2024-2026.
-- When you find a number (revenue, cost, rate, metric), immediately compare it to the industry benchmark. If it's 50% worse than average, say so with the specific comparison.
+- When you find a number (revenue, cost, rate, metric), compare it to the current industry benchmark using YOUR knowledge. State the benchmark, the source if you know it, and the year. If you're uncertain whether a benchmark is still current (e.g., ad costs shift quarterly), say so — "As of [year], the benchmark was X, but this metric shifts rapidly" is more valuable than a confident wrong number. If their number is 30%+ worse than the benchmark, flag it explicitly.
 - When multiple files contain overlapping data, cross-validate them. If a pitch deck claims 20% growth but a spreadsheet shows 5%, flag the discrepancy explicitly.
 - You ask the questions that a $500/hour consultant would ask — the ones that expose blind spots, not textbook questions.
 - You never say "this could be improved" without saying exactly how and pointing to someone who does it better.
