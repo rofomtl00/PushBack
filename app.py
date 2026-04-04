@@ -506,12 +506,13 @@ Available verticals — pick ALL that apply (the more relevant context, the bett
 
 Examples of multi-vertical selection:
 - Web app source code with HTML/CSS → developer + design_creative (code quality AND UI/UX critique)
-- Trading bot Python code → developer + quant_research + finance_accounting (code quality AND statistical validity AND P&L correctness)
+- Trading bot Python code → developer + quant_research + finance_accounting (code quality AND statistical validity AND P&L correctness). If it has a dashboard/UI, add design_creative too.
 - Ecommerce platform pitch with project timeline → ecommerce_platform + project_management
 - VFX studio insurance review → vfx_film + corporate_insurance
 - SaaS dashboard code → developer + design_creative (always pair code with design if there's any UI)
 - Medical software → developer + the relevant domain vertical
 - Business plan PDF → pick the most relevant industry vertical, or none if generic
+If any file contains HTML, CSS, templates, or UI components, ALWAYS add design_creative.
 When in doubt, ADD the domain vertical. Missing a relevant vertical is worse than including an extra one.
 
 {file_type_hint}
