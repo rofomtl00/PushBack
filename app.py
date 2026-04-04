@@ -159,7 +159,7 @@ _rate_limits = {}  # IP → {date, count}
 # ═══════════════════════════════════════════════
 # PRICING TIERS
 # ═══════════════════════════════════════════════
-# Pricing: Sonnet ~$1.50/analysis, Haiku ~$0.15/analysis
+# Pricing (verified Apr 2026): Sonnet ~$0.15/analysis (30K in + 4K out), Haiku ~$0.013/analysis
 # BYOK (Bring Your Own Key): user pays AI cost directly, we charge for platform only.
 TIERS = {
     "free":       {"analyses_per_month": 2,   "chat_per_analysis": 2,  "model": "haiku",  "byok_analyses": 10},
@@ -232,7 +232,7 @@ def _call_ai(system_prompt: str, user_message: str, history: list = None, tier: 
 
     # Per-call token budget: reject if single call would cost too much
     est_tokens = (len(system_prompt) + len(user_message) + sum(len(m.get("content", "")) for m in (history or []))) // 4
-    MAX_TOKENS_PER_CALL = 200_000  # ~$3 at Sonnet pricing — hard cap per analysis
+    MAX_TOKENS_PER_CALL = 200_000  # ~$0.60 at Sonnet pricing for 200K input — hard cap per analysis
     if est_tokens > MAX_TOKENS_PER_CALL and not user_key:
         return "Document too large for analysis. Try uploading fewer or smaller files."
 

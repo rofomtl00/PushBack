@@ -12,6 +12,7 @@ VERTICALS = {
         "checklist": """FIRST: Is this the right technical approach? Could it be simpler? Is the team building what already exists?
 CHECK: test coverage %, deployment frequency (DORA metrics), code review process, CI/CD pipeline, API documentation, containerization, observability stack (logging+metrics+tracing — not just console.log), security scanning (SAST/DAST), dependency management (Dependabot/Renovate), error monitoring (Sentry/Datadog), database migration strategy, API versioning, rate limiting, secrets management (vault, not env files), load testing results
 DEPLOYMENT: verify env vars read correctly (PORT, API keys), start commands match entry point, all deps in requirements.txt, app works on target platform not just locally, no hardcoded ports/paths
+COST MODEL: if the app calls paid APIs (AI models, cloud services), verify cost per request using CURRENT pricing from the provider's pricing page. Check: are costs calculated with actual token counts or estimates? A 10x error in cost assumptions kills the business.
 INTEGRATION: API endpoints documented, CORS configured, auth works for external clients, MCP/plugin/extension discovery accessible
 RED FLAGS: no automated testing, manual deployments, bus factor of 1, no staging environment, no incident response plan, AI-generated code without review, hardcoded ports, missing deps, console errors in web UI, no error monitoring in production
 ATTACK: "Show me your test coverage report." "Open browser console — any errors?" "What's your rollback procedure?" "How do you handle a dependency with a critical CVE tomorrow?"
@@ -67,8 +68,9 @@ BENCHMARKS: Core Web Vitals, 44px touch targets, max 2 typefaces, 5-6 color pale
         "label": "Finance / Accounting / Tax",
         "checklist": """FIRST: Are the financial assumptions realistic or hockey-stick fantasy? Does the model survive a 30% revenue drop?
 CHECK: revenue recognition (IFRS 15/ASC 606), cash flow vs net income, AR vs revenue growth, debt-to-equity, effective tax rate vs statutory, budget sensitivity (4 scenarios), RRSP/TFSA/FHSA optimization, transfer pricing docs, intercompany elimination, currency hedging, lease accounting (IFRS 16), working capital, AP aging, cash forecast accuracy
-RED FLAGS: positive income negative cash flow, AR growing faster than revenue, EBITDA 5+ adjustments, no budget contingency, no downside scenario, crypto unreported, no TP study
-ATTACK: "Recalculate margins from raw data." "Trace top 5 revenue items to invoices." "Effective tax rate vs statutory — explain every gap." "Bank statements vs balance sheet — match?"
+UNIT ECONOMICS: if the product uses API calls (AI, cloud services, payment processors), calculate ACTUAL cost per transaction using current API pricing — not estimates. Verify: input tokens × price/1M + output tokens × price/1M = real cost. Compare to revenue per user. If cost assumptions are off by 10x, the entire business model is wrong.
+RED FLAGS: positive income negative cash flow, AR growing faster than revenue, EBITDA 5+ adjustments, no budget contingency, no downside scenario, crypto unreported, no TP study, API cost estimates not verified against actual pricing pages, margin calculations using stale cost data
+ATTACK: "Recalculate margins from raw data." "Trace top 5 revenue items to invoices." "Effective tax rate vs statutory — explain every gap." "Bank statements vs balance sheet — match?" "Show me the actual API pricing page — does your cost model use current rates?"
 BENCHMARKS: current ratio >1.5, DSO <35, operating margin >15%, ROE >15%. Tax brackets, RRSP limits, SR&ED credits, CRA/IRS audit triggers.""",
     },
 
