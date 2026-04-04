@@ -342,7 +342,7 @@ def analyze_docs():
 You may receive business documents, code, creative projects (film, music, design, 3D), medical files, engineering files, or anything else. Some files may be binary (video, audio, images, project files) — you won't see their contents, but use the filenames, file types, sizes, and any accompanying text files to understand the full project.
 
 Your standards:
-- You compare everything to the best in its category. Name specific companies (A24, Stripe, Sequoia, McKinsey, Blumhouse, etc.) and cite real data from 2024-2026.
+- You compare everything to the best in its category. Name specific companies (A24, Stripe, Sequoia, McKinsey, Blumhouse, etc.) and cite real data.
 - When you find a number (revenue, cost, rate, metric), compare it to the current industry benchmark using YOUR knowledge. State the benchmark, the source if you know it, and the year. If you're uncertain whether a benchmark is still current (e.g., ad costs shift quarterly), say so — "As of [year], the benchmark was X, but this metric shifts rapidly" is more valuable than a confident wrong number. If their number is 30%+ worse than the benchmark, flag it explicitly.
 - When multiple files contain overlapping data, cross-validate them. If a pitch deck claims 20% growth but a spreadsheet shows 5%, flag the discrepancy explicitly.
 - You ask the questions that a $500/hour consultant would ask — the ones that expose blind spots, not textbook questions.
@@ -352,7 +352,14 @@ Your standards:
 - If you can't fully assess something because files are binary, say what additional information you'd need.
 - If the documents mention a specific company being pitched to (e.g., LCBO, Canadian Tire, BMW, Walmart), use your knowledge of that company — their size, tech stack, procurement requirements, industry regulations, competitive landscape — to evaluate whether this pitch would pass their procurement process. Be specific about what that company would require.
 - If the documents involve specific tools or platforms (Salesforce, HubSpot, SAP, Shopify, Jira, etc.), use your knowledge of those tools — capabilities, limitations, pricing tiers, common implementation pitfalls, and better alternatives — to evaluate whether the approach is sound.
-- ALWAYS include a section called "What You Might Not Have Considered" — surface emerging trends, alternative approaches, new market opportunities, or industry shifts that the creator hasn't addressed. Back every trend with specific data: market size, growth rate, company examples, and source/year. Never mention a trend without numbers to prove it matters. This is where PushBack delivers the most value — telling people what they don't know to ask about, with proof."""
+- ALWAYS include a section called "What You Might Not Have Considered" — surface emerging trends, alternative approaches, new market opportunities, or industry shifts that the creator hasn't addressed. Back every trend with specific data: market size, growth rate, company examples, and source/year. Never mention a trend without numbers to prove it matters. This is where PushBack delivers the most value — telling people what they don't know to ask about, with proof.
+
+CONFIDENCE TAGGING — You MUST tag your data sources when citing benchmarks or industry data:
+- If the data comes from the "Industry Context" section provided to you (vertical knowledge), cite it as: **(Source: PushBack Industry Data, [year])** — this is researched, dated, and specific.
+- If the data comes from your own training knowledge, cite it as: **(Source: General industry knowledge, ~[year])** — be honest about the approximate year.
+- If a metric is volatile (ad costs, crypto prices, interest rates, exchange rates), add: **(Note: This metric shifts frequently — verify current figures before making decisions.)**
+- If you are NOT confident in a specific number, say "approximately" or give a range instead of a false-precision single number.
+- NEVER fabricate a source name. If you don't know where a number comes from, say "industry estimates" not "McKinsey 2025 report" unless you're certain that report exists."""
 
     result = _call_ai(system, prompt)
     s["analysis"] = result
@@ -585,7 +592,11 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
     <div id="analysisBox" style="display:none">
       <div class="analysis" id="analysisContent"></div>
 
-      <div class="actions" style="margin-top:16px">
+      <div style="margin-top:12px; padding:12px 16px; background:var(--bg2); border:1px solid var(--border); border-radius:8px; font-size:12px; color:var(--text3); line-height:1.6;">
+        AI-powered analysis — not financial, legal, or professional advice. Benchmarks tagged <strong style="color:var(--text2)">(Source: PushBack Industry Data)</strong> are researched and dated. Benchmarks tagged <strong style="color:var(--text2)">(Source: General industry knowledge)</strong> come from AI training data and may not reflect current market conditions. Verify critical numbers independently before making decisions.
+      </div>
+
+      <div class="actions" style="margin-top:12px">
         <button class="btn btn-secondary btn-sm" onclick="downloadReport()">Download Report</button>
         <button class="btn btn-secondary btn-sm" onclick="doAnalyze()">Re-Analyze</button>
       </div>
@@ -749,8 +760,9 @@ function askQuestion(q) {
 // Download
 function downloadReport() {
   const analysis = document.getElementById('analysisContent').innerText;
+  const disclaimer = '\\n\\n---\\nDISCLAIMER: AI-powered analysis. Not financial, legal, or professional advice. Benchmarks from PushBack Industry Data are researched and dated. Benchmarks from general AI knowledge may not reflect current market conditions. Verify critical numbers independently before making decisions.';
   const report = 'PUSHBACK ANALYSIS REPORT\\n========================\\n\\nDate: ' +
-    new Date().toLocaleDateString() + '\\n\\n' + analysis;
+    new Date().toLocaleDateString() + '\\n\\n' + analysis + disclaimer;
   const blob = new Blob([report], {type: 'text/plain'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
