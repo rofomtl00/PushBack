@@ -230,9 +230,14 @@ def _call_ai(system_prompt: str, user_message: str, history: list = None, tier: 
     if not key:
         return "No API key configured. Set PUSHBACK_API_KEY in environment."
 
+    # Per-call token budget: reject if single call would cost too much
+    est_tokens = (len(system_prompt) + len(user_message) + sum(len(m.get("content", "")) for m in (history or []))) // 4
+    MAX_TOKENS_PER_CALL = 200_000  # ~$3 at Sonnet pricing — hard cap per analysis
+    if est_tokens > MAX_TOKENS_PER_CALL and not user_key:
+        return "Document too large for analysis. Try uploading fewer or smaller files."
+
     # Cost tracking — skip if BYOK (user pays directly)
     if not user_key:
-        est_tokens = (len(system_prompt) + len(user_message) + sum(len(m.get("content", "")) for m in (history or []))) // 4
         if not _check_daily_cost(est_tokens):
             return "Analysis limit reached. Service resets monthly. This protects against cost overruns."
         _track_cost(est_tokens)
@@ -659,6 +664,14 @@ def analyze_docs():
             _extract_learnings(s)
         except Exception:
             pass
+
+    # Cache: skip AI call if content hasn't changed (re-analyze same files)
+    import hashlib
+    content_hash = hashlib.md5(s["context"][:10000].encode()).hexdigest()
+    if s.get("_content_hash") == content_hash and s.get("analysis"):
+        return jsonify({"ok": True, "analysis": s["analysis"], "doc_type": s["doc_type"]["label"], "cached": True})
+    s["_content_hash"] = content_hash
+
     prompt = _build_prompt(s)
     system = """You are PushBack — a strategic preparation tool for executives who are walking into high-stakes meetings where the other side has McKinsey, Accenture, Deloitte, or PitchBook backing them up.
 
@@ -832,6 +845,15 @@ def analyze_url():
     if monthly_usage >= tier_limits["analyses_per_month"]:
         return jsonify({"ok": False, "error": f"Free tier limit reached ({tier_limits['analyses_per_month']}/month).", "upgrade": True}), 429
     _increment_usage(ip)
+
+    # SSRF protection: block private/internal URLs
+    import urllib.parse as _urlparse
+    _host = _urlparse.urlparse(url).hostname or ""
+    _blocked = ["localhost", "127.0.0.1", "0.0.0.0", "169.254.169.254",
+                "metadata.google", "metadata.aws"]
+    if any(_host == b or _host.startswith(b) for b in _blocked) or \
+       _host.startswith("10.") or _host.startswith("192.168.") or _host.startswith("172."):
+        return jsonify({"ok": False, "error": "Internal URLs are not allowed"}), 400
 
     # Fetch URL content
     try:
@@ -1394,7 +1416,7 @@ function downloadReport() {
 
 // Checkout & License
 // URL analysis
-// BYOK: Bring Your Own Key
+// BYOK: Bring Your Own Key (base64 obfuscated in localStorage)
 function saveByok() {
   const key = document.getElementById('byokInput').value.trim();
   const status = document.getElementById('byokStatus');
@@ -1403,12 +1425,13 @@ function saveByok() {
     status.textContent = 'Key must start with sk-ant- (Claude), gsk_ (Groq), or sk- (OpenAI)';
     status.style.color = 'var(--red)'; return;
   }
-  localStorage.setItem('pushback_user_key', key);
+  localStorage.setItem('pushback_user_key', btoa(key));
+  document.getElementById('byokInput').value = '';
   status.textContent = 'Key saved. Your analyses now use your own API — unlimited.';
   status.style.color = 'var(--green)';
   document.getElementById('byokToggle').innerHTML = 'Using your own API key <span style="color:var(--green)">Active</span>';
 }
-function getByok() { return localStorage.getItem('pushback_user_key') || ''; }
+function getByok() { const e = localStorage.getItem('pushback_user_key'); return e ? atob(e) : ''; }
 
 // Check on load
 if (localStorage.getItem('pushback_user_key')) {
