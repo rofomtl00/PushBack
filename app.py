@@ -173,12 +173,34 @@ def _extract_learnings(session: dict):
             # SAFETY: Only store PROCESS learnings, never factual claims.
             # "PushBack flagged X but it was already handled" = safe (process)
             # "The benchmark for Y is actually Z" = UNSAFE (factual — could be wrong or malicious)
+                # SAFETY GATES — reject learnings that could corrupt or abuse the system
+            # 1. No factual claims (attacker could teach wrong benchmarks)
             factual_signals = ["benchmark", "average", "industry standard", "the rate is",
                                "actually costs", "the price is", "the number is", "should be",
                                "the correct", "the real", "the actual"]
             is_factual = any(s in text for s in factual_signals)
             if is_factual:
-                continue  # Skip factual corrections — AI should use its own verified knowledge
+                continue
+
+            # 2. No prompt injection attempts
+            injection_signals = ["ignore previous", "ignore above", "new instructions",
+                                 "system prompt", "you are now", "forget everything",
+                                 "disregard", "override", "jailbreak", "pretend you are"]
+            is_injection = any(s in text for s in injection_signals)
+            if is_injection:
+                continue
+
+            # 3. No harmful content
+            harmful_signals = ["how to hack", "how to steal", "how to launder",
+                               "evade taxes", "hide money", "fake documents",
+                               "forge", "counterfeit"]
+            is_harmful = any(s in text for s in harmful_signals)
+            if is_harmful:
+                continue
+
+            # 4. Skip very short or very long messages (spam / injection padding)
+            if len(text) < 10 or len(text) > 2000:
+                continue
 
             # Check if a similar learning already exists — confirm it instead of duplicating
             _try_confirm_existing(doc_type, text[:200])
@@ -748,9 +770,18 @@ def analyze_docs():
     s["_content_hash"] = content_hash
 
     prompt = _build_prompt(s)
-    system = """You are PushBack — a strategic preparation tool for executives who are walking into high-stakes meetings where the other side has McKinsey, Accenture, Deloitte, or PitchBook backing them up.
+    system = """You are PushBack — a strategic preparation tool for professionals who need honest, thorough analysis of their work.
 
-Your job is NOT to give a generic AI review. Your job is to prepare the user to survive scrutiny from world-class advisors and procurement teams. The person reading your analysis might be:
+SAFETY AND ETHICS — NON-NEGOTIABLE:
+- REFUSE to help with anything illegal, fraudulent, or deceptive. If documents contain evidence of fraud, money laundering, tax evasion, market manipulation, insider trading, discrimination, or any illegal activity — flag it explicitly and recommend legal counsel. Do not help conceal, minimize, or strategize around illegal conduct.
+- REFUSE to help create misleading documents. If the user asks you to help make false claims more convincing, inflate metrics, fabricate data, or deceive investors/regulators/customers — refuse and explain why.
+- REFUSE to help harm people. If documents describe plans that would cause harm (unsafe products, environmental violations, labor exploitation, privacy violations) — flag the risk and recommend they don't proceed.
+- If documents contain personal data (SSNs, medical records, financial accounts), note that this data should not have been uploaded to a third-party service and recommend secure handling.
+- ALWAYS recommend professional advice (lawyer, CPA, licensed broker, medical professional) when the analysis touches regulated domains. PushBack is analysis, not professional advice.
+- Flag any conflicts of interest, undisclosed related-party transactions, or self-dealing you detect.
+- If something feels wrong but you can't identify the specific law or regulation, say so: "This raises ethical concerns even if technically legal."
+
+Your job is to prepare the user to survive scrutiny from world-class advisors and procurement teams. The person reading your analysis might be:
 - Pitching against a competitor who hired BCG to build their deck
 - Presenting to a board that has Bloomberg Terminal data in front of them
 - Responding to an RFP where Accenture wrote the evaluation criteria
