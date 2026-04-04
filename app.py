@@ -1567,50 +1567,43 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 
     <!-- Case Study -->
     <div id="caseStudy" style="margin-top:56px;padding:0 4px">
-      <div style="text-align:center;margin-bottom:32px">
-        <div style="font-size:18px;font-weight:700;color:var(--text)">Why Multiple Verticals Matter</div>
-        <div style="font-size:14px;color:var(--text3);margin-top:4px">A real-world code review where single-vertical analysis missed critical bugs</div>
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:16px;font-weight:700;color:var(--text)">Real Example: 3 Verticals on One Codebase</div>
       </div>
 
-      <div style="padding:24px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-bottom:20px">
-        <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:12px">The Setup</div>
-        <div style="font-size:14px;color:var(--text2);line-height:1.8">
-          An automated trading bot (5,000+ lines of Python) was reviewed by an AI coding assistant. The assistant ran tests, fixed import errors, and confirmed "all clear." PushBack was then asked to review the same codebase &mdash; but across <strong>three verticals simultaneously</strong>: Developer, Quant Research, and Finance/Accounting.
-        </div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:16px">
+        A 5,000-line Python trading bot was reviewed with Developer, Quant Research, and Finance/Accounting verticals applied together. Each vertical caught issues the others missed.
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:20px">
-        <div style="padding:20px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px">
-          <div style="font-size:13px;font-weight:600;color:var(--red);margin-bottom:8px">Developer Vertical Found</div>
-          <ul style="font-size:13px;color:var(--text2);line-height:1.8;padding-left:18px">
-            <li><strong>Live API keys shipped in the distribution zip</strong> &mdash; Bitget, Crypto.com, Hyperliquid private key, and Anthropic API key in plaintext</li>
-            <li><strong>Bear market protection silently disabled</strong> &mdash; earnings seeder used wrong column names (<code>category</code> instead of <code>source</code>), so crash detection never activated after restart</li>
-            <li><strong>3 silent failure points</strong> &mdash; settings save endpoint swallowed errors with bare <code>except: pass</code>, returning 200 OK when settings weren't applied</li>
+      <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:16px">
+        <div style="padding:16px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px">
+          <div style="font-size:12px;font-weight:600;color:var(--red);margin-bottom:6px">Developer</div>
+          <ul style="font-size:12px;color:var(--text2);line-height:1.7;padding-left:16px;margin:0">
+            <li>Live API keys shipped in distribution zip</li>
+            <li>Crash protection disabled &mdash; wrong column names in data seeder</li>
+            <li>Settings save swallowed errors silently</li>
           </ul>
         </div>
-        <div style="padding:20px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px">
-          <div style="font-size:13px;font-weight:600;color:#92400e;margin-bottom:8px">Quant Research Vertical Found</div>
-          <ul style="font-size:13px;color:var(--text2);line-height:1.8;padding-left:18px">
-            <li><strong>Look-ahead bias in test data</strong> &mdash; <code>shift(-12)</code> column + <code>dropna()</code> silently truncated the test period by 12 bars, inflating reported performance</li>
-            <li><strong>Optimization objective rewarded overtrading</strong> &mdash; <code>pf * sqrt(n)</code> biased strategy tuning toward high frequency instead of quality</li>
-            <li><strong>Live strategy with Sharpe 0.162</strong> &mdash; barely above random noise, deployed with real capital</li>
+        <div style="padding:16px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px">
+          <div style="font-size:12px;font-weight:600;color:#92400e;margin-bottom:6px">Quant Research</div>
+          <ul style="font-size:12px;color:var(--text2);line-height:1.7;padding-left:16px;margin:0">
+            <li>Look-ahead bias &mdash; <code>shift(-12)</code> + <code>dropna()</code> truncated test data</li>
+            <li>Optimizer objective rewarded overtrading</li>
+            <li>Strategy with Sharpe 0.16 deployed live</li>
           </ul>
         </div>
-        <div style="padding:20px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px">
-          <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:8px">Finance/Accounting Vertical Found</div>
-          <ul style="font-size:13px;color:var(--text2);line-height:1.8;padding-left:18px">
-            <li><strong>Funding earnings double-counted in ledger</strong> &mdash; each settlement logged incrementally, then close logged the same amount again minus fees. P&amp;L was systematically overstated.</li>
-            <li><strong>Thread-unsafe running total</strong> &mdash; double lock acquisition in ledger write allowed concurrent threads to produce corrupted balances</li>
-            <li><strong>Stop-loss exits undercharged by 0.04%</strong> &mdash; market-order exits billed at limit-order rates, compounding across hundreds of trades</li>
+        <div style="padding:16px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px">
+          <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:6px">Finance/Accounting</div>
+          <ul style="font-size:12px;color:var(--text2);line-height:1.7;padding-left:16px;margin:0">
+            <li>Funding earnings double-counted in ledger</li>
+            <li>Thread-unsafe running total in P&amp;L</li>
+            <li>Stop-loss exits undercharged (limit fee on market orders)</li>
           </ul>
         </div>
       </div>
 
-      <div style="padding:20px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;text-align:center">
-        <div style="font-size:14px;color:var(--text2);line-height:1.8">
-          The AI coding assistant saw <strong>0 issues</strong>. PushBack found <strong>45 across 3 verticals</strong> &mdash; including credentials in the zip, double-counted P&amp;L, and a strategy running on live capital with near-zero statistical edge.<br>
-          <span style="color:var(--text3);font-size:13px">Single-vertical analysis would have caught some. All three together caught the full picture.</span>
-        </div>
+      <div style="font-size:12px;color:var(--text3);text-align:center;line-height:1.6">
+        Each vertical applies a different checklist. No single one catches everything.
       </div>
     </div>
 
