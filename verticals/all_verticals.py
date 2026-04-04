@@ -21,6 +21,8 @@ MISSING DOCUMENTS: Based on the domain, identify what documents SHOULD exist but
 SCOPE DISCIPLINE: Analyze only what is presented. Do not add unrequested analysis. If something is out of scope but critical, flag it as "OUT OF SCOPE BUT RELEVANT" in one line.
 
 FAILURE MODE: Before finalizing, ask: "If this fails in 12 months, what was the most likely cause?" State that cause explicitly.
+
+UNNECESSARY ROUND-TRIPS: If a workflow, API, or tool requires N separate calls to accomplish what could be done in 1, flag it. Every extra call is a failure point — 85% accuracy per step × 10 steps = 20% end-to-end success. Batch what can be batched.
 """
 
 VERTICALS = {
@@ -53,6 +55,7 @@ CODE INTEGRITY RULES — apply to any codebase:
 - Silent failures: for every error handler, ask "what does the user SEE?" If nothing — that's a bug.
 - When you find a bug, search for the same pattern in every other file. Bugs cluster.
 - Parallel paths: if dry run was updated, was live mode updated too? If the API was changed, was the dashboard updated?
+- API/tool ergonomics: does the interface force multiple calls where one would do? Every round-trip is a failure point, latency cost, and context loss risk. Batch operations should be batched.
 
 RED TEAM — ask these adversarial questions:
 - "What happens at 10x current load? Show me the load test, not the architecture diagram."
