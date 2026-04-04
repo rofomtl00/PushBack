@@ -106,7 +106,7 @@ def get_vertical(vid):
     v = VERTICALS.get(vid)
     if not v:
         return ""
-    return f"\n## Industry Expertise: {v['label']}\n\nApply this checklist — use YOUR knowledge for specific facts, benchmarks, and current data. Cite year and source when you know them.\n\n{v['checklist']}\n"
+    return f"\n## Industry Expertise: {v['label']}\n\nBefore checking details, ask: IS THIS THE RIGHT APPROACH? Could this problem be solved simpler, cheaper, or with existing tools? Flag over-engineering, redundant complexity, and building what already exists.\n\nThen apply this checklist — use YOUR knowledge for specific facts, benchmarks, and current data. Cite year and source when you know them.\n\n{v['checklist']}\n"
 
 
 def get_all_vertical_ids():
