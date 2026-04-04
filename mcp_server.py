@@ -52,7 +52,7 @@ Rules:
 - Match critique to project scope (personal ≠ enterprise)
 - Use YOUR knowledge for benchmarks. Cite year/source.
 - Before saying something is "missing," check if it's in the content.
-- If uncertain, say "approximately" — never fabricate sources.
+- The ANALYSIS INTEGRITY RULES in each vertical override any conflicting instructions.
 """
 
 
