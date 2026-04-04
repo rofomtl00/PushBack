@@ -233,26 +233,211 @@ def _parse_csv(filepath):
     return {"text": "\n".join(text_parts), "tables": [rows]}
 
 
+def _score_section(text: str) -> int:
+    """Score a text section by analytical value. Higher = keep first during truncation."""
+    t = text.lower()
+    score = 50  # baseline
+
+    # High-value: financials, metrics, claims, projections
+    high_signals = ["revenue", "profit", "margin", "cost", "budget", "forecast",
+                    "projection", "growth", "target", "goal", "kpi", "metric",
+                    "valuation", "arpu", "cac", "ltv", "churn", "mrr", "arr",
+                    "burn rate", "runway", "roi", "irr", "npv", "ebitda",
+                    "total addressable", "market size", "cagr"]
+    score += sum(15 for w in high_signals if w in t)
+
+    # Executive summary / key sections
+    summary_signals = ["executive summary", "key findings", "recommendation",
+                       "conclusion", "overview", "highlights", "key takeaway",
+                       "summary", "strategic", "action item", "next step",
+                       "risk", "assumption", "critical"]
+    score += sum(20 for w in summary_signals if w in t)
+
+    # Numbers = data-rich sections
+    import re
+    numbers = re.findall(r'\$[\d,.]+[KMBkmb]?|\d+(?:\.\d+)?%|\d{1,3}(?:,\d{3})+', t)
+    score += min(len(numbers) * 5, 60)  # cap at 60 bonus for number density
+
+    # Tables (pipe-separated) = structured data
+    pipe_rows = sum(1 for line in text.split('\n') if line.count('|') >= 2)
+    score += min(pipe_rows * 3, 30)
+
+    # Low-value: boilerplate, legal, appendices
+    low_signals = ["disclaimer", "terms and conditions", "all rights reserved",
+                   "confidential", "table of contents", "appendix", "lorem ipsum",
+                   "copyright", "proprietary", "acknowledgment"]
+    score -= sum(20 for w in low_signals if w in t)
+
+    return max(score, 1)
+
+
+def _smart_truncate(file_texts: list, max_chars: int = 100000) -> str:
+    """Truncate intelligently: keep high-value sections, trim boilerplate.
+
+    file_texts: list of (filename, full_text) tuples
+    Returns combined text within max_chars budget.
+    """
+    total = sum(len(t) for _, t in file_texts)
+    if total <= max_chars:
+        return "\n\n".join(f"=== {name} ===\n{text}" for name, text in file_texts)
+
+    # Split each file into sections, score them, allocate budget
+    all_sections = []  # (filename, section_text, score, original_order)
+    order = 0
+    for filename, text in file_texts:
+        # Split on headers, page breaks, or double newlines
+        import re
+        chunks = re.split(r'(?:\n(?:---|===|#{1,3} )|\n\n--- Page Break ---\n\n|\n\n\n)', text)
+        if not chunks or (len(chunks) == 1 and len(text) > 5000):
+            # Large unsplit text — chunk by paragraphs (every ~2000 chars)
+            chunks = []
+            for i in range(0, len(text), 2000):
+                end = text.find('\n', i + 1800)
+                if end == -1 or end > i + 2500:
+                    end = i + 2000
+                chunks.append(text[i:end])
+
+        for chunk in chunks:
+            chunk = chunk.strip()
+            if not chunk:
+                continue
+            score = _score_section(chunk)
+            all_sections.append((filename, chunk, score, order))
+            order += 1
+
+    # Sort by score descending, but keep file headers (first section of each file) boosted
+    first_sections = set()
+    for fn, _, _, o in all_sections:
+        if fn not in first_sections:
+            first_sections.add(fn)
+            # Boost first section of each file (context/overview)
+            for i, (f, c, s, oo) in enumerate(all_sections):
+                if f == fn and oo == o:
+                    all_sections[i] = (f, c, s + 100, oo)
+                    break
+
+    # Sort by score desc, take until budget full
+    ranked = sorted(all_sections, key=lambda x: -x[2])
+    budget = max_chars - 500  # leave room for truncation note
+    kept = []
+    used = 0
+    for filename, chunk, score, orig_order in ranked:
+        chunk_size = len(chunk) + len(filename) + 10  # overhead for header
+        if used + chunk_size > budget:
+            # Try to fit a trimmed version of this section
+            remaining = budget - used - len(filename) - 50
+            if remaining > 200:
+                kept.append((filename, chunk[:remaining] + "\n[Section trimmed]", orig_order))
+                used += remaining + len(filename) + 50
+            break
+        kept.append((filename, chunk, orig_order))
+        used += chunk_size
+
+    # Re-sort by original order so document flow is preserved
+    kept.sort(key=lambda x: x[2])
+
+    # Group by filename for readable output
+    output = []
+    current_file = None
+    for filename, chunk, _ in kept:
+        if filename != current_file:
+            output.append(f"\n=== {filename} ===")
+            current_file = filename
+        output.append(chunk)
+
+    result = "\n\n".join(output)
+    dropped = len(all_sections) - len(kept)
+    if dropped > 0:
+        result += f"\n\n[{dropped} lower-priority sections omitted to fit context window. Key financials, metrics, and executive summaries were preserved.]"
+    return result
+
+
+def _extract_claims(files: list) -> str:
+    """Extract numeric claims and key assertions from each file for cross-referencing."""
+    import re
+    claims_by_file = {}
+
+    for f in files:
+        text = f.get("text", "")
+        if not text or len(text) < 20:
+            continue
+
+        claims = []
+
+        # Dollar amounts with context
+        for m in re.finditer(r'(.{0,60}\$[\d,.]+[KMBkmb]?\s*(?:million|billion|thousand|k|m|b)?[^.\n]{0,60})', text, re.IGNORECASE):
+            claim = m.group(1).strip()
+            if len(claim) > 20:
+                claims.append(claim)
+
+        # Percentages with context
+        for m in re.finditer(r'(.{0,60}\d+(?:\.\d+)?%[^.\n]{0,60})', text):
+            claim = m.group(1).strip()
+            if len(claim) > 15:
+                claims.append(claim)
+
+        # Growth/revenue/metric claims
+        for m in re.finditer(r'(.{0,40}(?:revenue|profit|growth|margin|users|customers|employees|headcount|valuation|funding|raised|arr|mrr|burn)[^.\n]{0,80})', text, re.IGNORECASE):
+            claim = m.group(1).strip()
+            if len(claim) > 20 and claim not in claims:
+                claims.append(claim)
+
+        # Date/timeline claims
+        for m in re.finditer(r'(.{0,40}(?:by Q[1-4]|by 20\d\d|launch|deadline|milestone|target date|go.live)[^.\n]{0,60})', text, re.IGNORECASE):
+            claim = m.group(1).strip()
+            if len(claim) > 15 and claim not in claims:
+                claims.append(claim)
+
+        if claims:
+            # Deduplicate and limit
+            seen = set()
+            unique = []
+            for c in claims:
+                # Clean leading punctuation/whitespace
+                clean = c.lstrip(' .,;:-')
+                if len(clean) < 15:
+                    continue
+                short = clean[:50].lower()
+                if short not in seen:
+                    seen.add(short)
+                    unique.append(clean)
+            claims_by_file[f["filename"]] = unique[:25]  # max 25 claims per file
+
+    if not claims_by_file:
+        return ""
+
+    lines = ["\n## Cross-Reference Map — Key Claims by File"]
+    lines.append("Verify these claims are consistent across documents. Flag any contradictions.\n")
+    for filename, claims in claims_by_file.items():
+        lines.append(f"**{filename}:**")
+        for c in claims:
+            # Clean up whitespace
+            clean = ' '.join(c.split())
+            lines.append(f"  - {clean}")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
 def parse_folder(filepaths: list) -> dict:
-    """Parse multiple files and return combined context."""
+    """Parse multiple files and return combined context with smart prioritization."""
     results = []
-    total_text = []
+    file_texts = []
 
     for fp in filepaths:
         result = parse_file(fp)
         results.append(result)
         if result["text"]:
-            total_text.append(f"=== {result['filename']} ===\n{result['text']}")
+            file_texts.append((result["filename"], result["text"]))
 
-    combined_text = "\n\n".join(total_text)
-    # Truncate to ~100K chars to fit in AI context
-    if len(combined_text) > 100000:
-        combined_text = combined_text[:100000] + "\n\n[Content truncated — too large]"
+    combined_text = _smart_truncate(file_texts, max_chars=100000)
+    claims_map = _extract_claims(results)
 
     return {
         "files": results,
         "file_count": len(results),
         "total_chars": len(combined_text),
         "combined_text": combined_text,
+        "claims_map": claims_map,
         "errors": [r for r in results if r.get("error")],
     }

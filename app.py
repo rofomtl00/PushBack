@@ -181,6 +181,8 @@ def _build_prompt(session: dict) -> str:
 
     file_map = "\n".join(arch_lines)
 
+    claims_map = s.get("claims_map", "")
+
     return f"""Here are {len(files)} files from a project. Read everything carefully before responding.
 
 ## Before you analyze, confirm your understanding:
@@ -195,7 +197,7 @@ This lets the reader confirm you understood their work before reading your feedb
 1. What's strong — acknowledge what works before critiquing.
 2. What's weak — be specific. Don't say "could be improved." Say exactly what's wrong and why it matters.
 3. What's missing — what would a world-class version of this project include that this one doesn't?
-4. Cross-document check — if multiple files contain overlapping data (numbers, claims, dates), verify they're consistent. Flag any discrepancies.
+4. Cross-document consistency — use the Cross-Reference Map below to verify that numbers, claims, dates, and metrics are consistent across all files. If the pitch deck says "$2M ARR" but the spreadsheet shows $800K, flag it explicitly with the exact values from each file. Check: revenue figures, growth rates, timelines, headcount, costs, market size claims, customer counts. Every number that appears in more than one file must match.
 5. Hard questions — ask 3-5 questions the creator probably hasn't considered. The kind that make someone pause. Base them on what you actually read.
 6. Downside scenario — model what happens if the key assumption is wrong. "If X drops 50%, then Y."
 7. What could fail — if this ships/launches/goes live tomorrow, what breaks first?
@@ -206,8 +208,10 @@ This lets the reader confirm you understood their work before reading your feedb
 
 {vertical}
 
+{claims_map}
+
 ## Full Contents
-{context[:100000]}"""
+{context}"""
 
 
 # ═══════════════════════════════════════════════
@@ -273,6 +277,7 @@ def upload():
     sessions[sid] = {
         "files": parsed["files"],
         "context": parsed["combined_text"],
+        "claims_map": parsed.get("claims_map", ""),
         "questions": questions,
         "analysis": None,
         "chat_history": [],
