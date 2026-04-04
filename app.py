@@ -1030,6 +1030,7 @@ async function doAnalyze() {
       document.getElementById('analysisBox').style.display = 'block';
       document.getElementById('chatBox').style.display = 'block';
       btn.textContent = 'Re-Analyze';
+      document.getElementById('analysisBox').scrollIntoView({behavior: 'smooth', block: 'start'});
     } else {
       if (data.upgrade) {
         toast(data.error);
