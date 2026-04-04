@@ -80,76 +80,94 @@ def _call_ai(system_prompt: str, user_message: str, history: list = None) -> str
 # DOCUMENT TYPE DETECTION — single function, used everywhere
 # ═══════════════════════════════════════════════
 
-CODE_EXTENSIONS = {".py", ".js", ".ts", ".tsx", ".jsx", ".go", ".rs", ".java",
-                   ".cpp", ".c", ".h", ".rb", ".php", ".swift", ".kt",
-                   ".html", ".css", ".scss", ".sql", ".sh", ".json", ".yaml", ".yml", ".toml"}
+# ═══════════════════════════════════════════════
+# AI-POWERED CLASSIFICATION — no keyword guessing
+# ═══════════════════════════════════════════════
 
-def _detect_type(files: list, context: str) -> dict:
-    """Detect what kind of documents these are. Returns type name and tailored prompt."""
-    t = context.lower()
-    code_count = sum(1 for f in files if f.get("type") in CODE_EXTENSIONS)
-    total = len(files) if files else 1
+# Registry: vertical_id → (module_path, description for classifier)
+VERTICALS = {
+    "ecommerce_platform": ("verticals.ecommerce_platform", "Ecommerce platform for physical retailers — BOPIS, POS integration, omnichannel, Shopify/SFCC competitors. Use when the CREATOR is building/pitching an ecommerce platform, NOT when they're analyzing ecommerce companies."),
+    "vfx_film": ("verticals.vfx_film", "VFX, film production, post-production, animation studios. Use when the CREATOR is a VFX/production company pitching for film work, NOT when they're building software for the film industry."),
+    "developer": ("verticals.developer", "Software development, code quality, architecture, DevOps, engineering teams. Use when the CREATOR is building software or evaluating a dev team's technical capability."),
+    "corporate_insurance": ("verticals.corporate_insurance", "Corporate insurance — group benefits, D&O, cyber liability, commercial coverage, brokers. Use when the CREATOR is evaluating or pitching insurance products/coverage."),
+    "project_management": ("verticals.project_management", "Project management, PMO, portfolio governance, Agile/Scrum/SAFe, delivery methodology. Use when the CREATOR is setting up or evaluating PM practices, tools, or team delivery."),
+}
 
-    # Code project — check file extensions FIRST, not content
-    if code_count > total / 2:
-        return {"type": "code", "label": "Code Review"}
+def _classify_and_load_vertical(files: list, context: str) -> tuple:
+    """Use AI to classify document type and select the right vertical (if any).
 
-    # Screenplay — very specific format markers
-    if any(w in t for w in ["int.", "ext.", "fade in", "cut to"]):
-        return {"type": "script", "label": "Script Coverage"}
+    Returns (doc_type_dict, vertical_context_string).
+    The AI sees file metadata + first 2000 chars and picks the best match.
+    This eliminates false positives from keyword matching.
+    """
+    # Build file summary for classifier
+    file_summary = []
+    for f in files:
+        desc = f"{f['filename']} ({f['type']}, {f['size_kb']} KB)"
+        meta = f.get("metadata", {})
+        if meta.get("pages"): desc += f", {meta['pages']} pages"
+        if meta.get("slides"): desc += f", {meta['slides']} slides"
+        if meta.get("sheets"): desc += f", sheets: {', '.join(meta['sheets'])}"
+        file_summary.append(desc)
 
-    # Film production — only if specific production terms (not generic words)
-    if any(w in t for w in ["shooting schedule", "call sheet", "shot list", "principal photography", "wrap day"]):
-        return {"type": "film_production", "label": "Production Review"}
+    file_list = "\n".join(f"- {s}" for s in file_summary)
+    preview = context[:3000]  # enough for AI to understand what this is
 
-    # Raw data — spreadsheets without claims
-    has_claims = any(w in t for w in ["we will", "we plan", "our goal", "we expect", "projected",
-                                       "forecast", "target", "strategy", "vision", "opportunity", "believe"])
-    if not has_claims and any(f.get("type") in (".xlsx", ".xls", ".csv") for f in files):
-        return {"type": "data", "label": "Data Analysis"}
+    vertical_options = "\n".join(
+        f"- {vid}: {desc}" for vid, (_, desc) in VERTICALS.items()
+    )
 
-    # Presentation without claims
-    if not has_claims and any(f.get("type") == ".pptx" for f in files):
-        return {"type": "presentation", "label": "Presentation Review"}
+    classify_prompt = f"""Classify these uploaded documents. You must determine:
+1. What TYPE of document/project this is (the label shown to the user)
+2. Which specialized vertical knowledge base (if any) should be loaded
 
-    # Business documents (default for docs with text)
-    return {"type": "business", "label": "Business Analysis"}
+CRITICAL: Determine what the CREATOR of these documents is doing, not just what topics appear in the text.
+- A SaaS pitch deck that SERVES the film industry → label "Business Analysis", vertical: NONE (it's a SaaS company, not a film production)
+- A McKinsey report ABOUT ecommerce trends → label "Business Analysis", vertical: NONE (it's a consulting report, not an ecommerce platform)
+- An actual film production budget and shooting schedule → label "Production Review", vertical: vfx_film
+- A company's insurance renewal documents → label "Insurance Review", vertical: corporate_insurance
+- Source code files for a web application → label "Code Review", vertical: developer
 
+Files:
+{file_list}
 
-def _get_vertical_context(files, context):
-    """Check if any deep vertical knowledge applies. Returns context string or empty."""
+Content preview:
+{preview}
+
+Available verticals (pick AT MOST one, or "none"):
+{vertical_options}
+
+Respond in EXACTLY this format, nothing else:
+LABEL: <short label for the user, 2-3 words>
+VERTICAL: <vertical_id or none>"""
+
     try:
-        from verticals.ecommerce_platform import detect_ecommerce_platform, VERTICAL_CONTEXT
-        if detect_ecommerce_platform(files, context):
-            return VERTICAL_CONTEXT
+        result = _call_ai("You are a document classifier. Respond only in the exact format requested. No explanation.", classify_prompt)
+        label = "Business Analysis"
+        vertical_id = "none"
+        for line in result.strip().split("\n"):
+            line = line.strip()
+            if line.upper().startswith("LABEL:"):
+                label = line.split(":", 1)[1].strip()
+            elif line.upper().startswith("VERTICAL:"):
+                vertical_id = line.split(":", 1)[1].strip().lower()
+        doc_type = {"type": label.lower().replace(" ", "_"), "label": label}
     except Exception:
-        pass
-    try:
-        from verticals.vfx_film import detect_vfx_film, VERTICAL_CONTEXT as VFX_CONTEXT
-        if detect_vfx_film(files, context):
-            return VFX_CONTEXT
-    except Exception:
-        pass
-    try:
-        from verticals.developer import detect_developer, VERTICAL_CONTEXT as DEV_CONTEXT
-        if detect_developer(files, context):
-            return DEV_CONTEXT
-    except Exception:
-        pass
-    try:
-        from verticals.corporate_insurance import detect_corporate_insurance, VERTICAL_CONTEXT as INS_CONTEXT
-        if detect_corporate_insurance(files, context):
-            return INS_CONTEXT
-    except Exception:
-        pass
-    try:
-        from verticals.project_management import detect_project_management, VERTICAL_CONTEXT as PM_CONTEXT
-        if detect_project_management(files, context):
-            return PM_CONTEXT
-    except Exception:
-        pass
-    # Add more verticals here as they're built
-    return ""
+        doc_type = {"type": "business", "label": "Business Analysis"}
+        vertical_id = "none"
+
+    # Load vertical context if one was selected
+    vertical_context = ""
+    if vertical_id and vertical_id != "none" and vertical_id in VERTICALS:
+        try:
+            module_path = VERTICALS[vertical_id][0]
+            import importlib
+            mod = importlib.import_module(module_path)
+            vertical_context = mod.VERTICAL_CONTEXT
+        except Exception:
+            pass
+
+    return doc_type, vertical_context
 
 
 def _build_prompt(session: dict) -> str:
@@ -158,7 +176,7 @@ def _build_prompt(session: dict) -> str:
     files = s["files"]
     context = s["context"]
     file_list = "\n".join(f"- {f['filename']} ({f['size_kb']} KB)" for f in files)
-    vertical = _get_vertical_context(files, context)
+    vertical = s.get("vertical_context", "")
 
     # Build file architecture
     arch_lines = []
@@ -272,12 +290,15 @@ def upload():
         pass
 
     questions = []  # Let the AI generate relevant questions, not keyword matching
-    doc_type = _detect_type(parsed["files"], parsed["combined_text"])
+
+    # AI classifies the documents — no keyword guessing
+    doc_type, vertical_context = _classify_and_load_vertical(parsed["files"], parsed["combined_text"])
 
     sessions[sid] = {
         "files": parsed["files"],
         "context": parsed["combined_text"],
         "claims_map": parsed.get("claims_map", ""),
+        "vertical_context": vertical_context,
         "questions": questions,
         "analysis": None,
         "chat_history": [],
