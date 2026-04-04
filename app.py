@@ -23,6 +23,7 @@ UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 sessions = {}
+MAX_SESSIONS = 500  # Prevent unbounded memory growth on Render (512MB free tier)
 _rate_limits = {}  # IP → {count, reset_time}
 MAX_ANALYSES_PER_HOUR = 20
 
@@ -343,6 +344,12 @@ def upload():
 
     # AI classifies the documents — no keyword guessing
     doc_type, vertical_context = _classify_and_load_vertical(parsed["files"], parsed["combined_text"])
+
+    # Evict oldest sessions if at capacity
+    if len(sessions) >= MAX_SESSIONS:
+        oldest = sorted(sessions.keys())[:len(sessions) - MAX_SESSIONS + 1]
+        for old_sid in oldest:
+            del sessions[old_sid]
 
     sessions[sid] = {
         "files": parsed["files"],

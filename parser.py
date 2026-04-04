@@ -10,6 +10,8 @@ import csv
 import json
 
 
+MAX_PARSE_SIZE_MB = 30  # Skip parsing files larger than this (binary content bloats memory)
+
 def parse_file(filepath: str) -> dict:
     """Parse a file and return structured content."""
     ext = os.path.splitext(filepath)[1].lower()
@@ -96,8 +98,15 @@ def parse_file(filepath: str) -> dict:
                     result["metadata"]["type"] = "binary"
             except Exception:
                 result["text"] = f"[File: {name} ({size_kb} KB)]"
+    except MemoryError:
+        result["error"] = "File too large to process in memory"
+        result["text"] = f"[{name}: too large to parse — {size_kb} KB]"
     except Exception as e:
         result["error"] = str(e)
+
+    # Safety: cap extracted text to prevent memory bloat from single files
+    if len(result.get("text", "")) > 500_000:
+        result["text"] = result["text"][:500_000] + "\n[Content truncated at 500K chars for this file]"
 
     return result
 
