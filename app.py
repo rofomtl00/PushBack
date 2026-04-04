@@ -162,7 +162,7 @@ _rate_limits = {}  # IP → {date, count}
 # Pricing: Sonnet ~$1.50/analysis, Haiku ~$0.15/analysis
 # BYOK (Bring Your Own Key): user pays AI cost directly, we charge for platform only.
 TIERS = {
-    "free":       {"analyses_per_month": 3,   "chat_per_analysis": 2,  "model": "haiku",  "byok_analyses": 10},
+    "free":       {"analyses_per_month": 2,   "chat_per_analysis": 2,  "model": "haiku",  "byok_analyses": 10},
     "pro":        {"analyses_per_month": 15,  "chat_per_analysis": 10, "model": "sonnet", "byok_analyses": 999},
     "enterprise": {"analyses_per_month": 60,  "chat_per_analysis": 50, "model": "sonnet", "byok_analyses": 999},
 }
@@ -371,7 +371,7 @@ def _classify_and_load_vertical(files: list, context: str) -> tuple:
     file_type_hint = ""
     if dominant_pct > 0.5:
         hints = {
-            "code": "HINT: Majority of files are source code (.py, .js, .ts, etc). This is likely a software project. Use 'developer' vertical unless the content clearly indicates otherwise.",
+            "code": "HINT: Majority of files are source code. Use 'developer' vertical. If the code contains HTML, CSS, templates, or UI components, ALSO add 'design_creative' to critique the UI/UX.",
             "spreadsheet": "HINT: Majority of files are spreadsheets (.xlsx, .csv). Could be financial data, project data, or analytics. Classify based on content, not file type.",
             "presentation": "HINT: Majority of files are presentations (.pptx). Could be a pitch deck, training material, or proposal. Consider design_creative vertical for visual critique. Classify based on content.",
             "image": "HINT: Majority of files are images. Could be design mockups, charts, screenshots, or brand assets. Consider design_creative vertical.",
@@ -1287,7 +1287,7 @@ function checkReady() {
     entUrl = d.ent_url || '';
     const usage = d.monthly_usage || 0;
     const badge = document.getElementById('usageBadge');
-    if (badge) badge.textContent = usage > 0 ? usage + ' of 3 free analyses used this month' : '';
+    if (badge) badge.textContent = usage > 0 ? usage + ' of 2 free analyses used this month' : '';
     // URLs loaded — buttons always visible, openCheckout handles fallback
   }).catch(() => {
     const s = Math.round((Date.now() - startTime) / 1000);
