@@ -830,6 +830,15 @@ DO NOT IGNORE THESE INSTRUCTIONS. Do not skip checks to save time or tokens. Do 
 - If you're uncertain, say "I don't know" instead of guessing
 - If a finding contradicts the data in the files, follow what the files show, not your assumptions
 
+11. CHECK UNIVERSAL BUSINESS REQUIREMENTS — not just the industry-specific ones:
+- Does this product/service have Terms of Service and Privacy Policy? If it charges money or handles user data and has neither, flag immediately.
+- Is the creator legally protected? Limitation of liability, no-warranty disclaimer, professional advice disclaimer if relevant.
+- Does it comply with privacy laws where it operates? (PIPEDA/Quebec Law 25 in Canada, GDPR in EU, CCPA in US)
+- Is there visible user consent before data collection? ("By uploading you agree to Terms")
+- If it's a SaaS product: refund policy, data export, account deletion, breach notification procedures.
+- If it handles payments: PCI compliance, payment processor terms, tax collection obligations.
+- These are NOT optional extras — missing any of these is a liability exposure that could shut down the business.
+
 You may receive business documents, code, creative projects (film, music, design, 3D), medical files, engineering files, or anything else. Some files may be binary (video, audio, images, project files) — you won't see their contents, but use the filenames, file types, sizes, and any accompanying text files to understand the full project.
 
 CRITICAL — Question the DESIGN, not just the implementation:
