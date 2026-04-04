@@ -25,57 +25,56 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 sessions = {}
 MAX_SESSIONS = 500
-LEARNINGS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "learnings.json")
-MAX_LEARNINGS = 200  # Keep last 200 insights
+
+# ═══════════════════════════════════════════════
+# SUPABASE — persistent learning storage
+# ═══════════════════════════════════════════════
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://dyatmsqxguhfyyucqewg.supabase.co")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
 
 
 def _load_learnings() -> list:
-    """Load accumulated learnings from disk."""
+    """Load learnings from Supabase. Falls back to empty if unavailable."""
+    if not SUPABASE_KEY:
+        return []
     try:
-        if os.path.exists(LEARNINGS_PATH):
-            with open(LEARNINGS_PATH, "r") as f:
-                return json.load(f)
+        import urllib.request
+        req = urllib.request.Request(
+            f"{SUPABASE_URL}/rest/v1/learnings?order=created_at.desc&limit=100",
+            headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            return json.loads(resp.read())
     except Exception:
-        pass
-    return []
+        return []
 
 
 def _save_learning(learning: dict):
-    """Append a learning and persist. Compresses old entries into summaries."""
-    learnings = _load_learnings()
-    learnings.append(learning)
-
-    # Compress: when over 100 entries, summarize old ones by industry
-    if len(learnings) > 100:
-        old = learnings[:-50]  # Entries to compress
-        keep = learnings[-50:]  # Keep recent 50 as-is
-        # Group old by industry and type
-        summaries = {}
-        for l in old:
-            key = f"{l.get('industry', 'general')}_{l.get('type', 'unknown')}"
-            if key not in summaries:
-                summaries[key] = {"industry": l.get("industry", "general"), "type": l.get("type"), "count": 0, "examples": []}
-            summaries[key]["count"] += 1
-            if len(summaries[key]["examples"]) < 2:  # Keep 2 examples per category
-                summaries[key]["examples"].append(l.get("user_said", "")[:100])
-        # Convert summaries to compact entries
-        compressed = []
-        for key, s in summaries.items():
-            compressed.append({
-                "type": "summary",
-                "industry": s["industry"],
-                "original_type": s["type"],
-                "count": s["count"],
-                "examples": s["examples"],
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            })
-        learnings = compressed + keep
-
+    """Save a learning to Supabase. Fire and forget — never blocks analysis."""
+    if not SUPABASE_KEY:
+        return
     try:
-        with open(LEARNINGS_PATH, "w") as f:
-            json.dump(learnings, f)
+        import urllib.request
+        data = json.dumps({
+            "type": learning.get("type", "unknown"),
+            "industry": learning.get("industry", ""),
+            "ai_said": learning.get("ai_said", "")[:500],
+            "user_said": learning.get("user_said", "")[:500],
+        }).encode()
+        req = urllib.request.Request(
+            f"{SUPABASE_URL}/rest/v1/learnings",
+            data=data,
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal",
+            },
+            method="POST"
+        )
+        urllib.request.urlopen(req, timeout=5)
     except Exception:
-        pass
+        pass  # Never block analysis for learning storage
 
 
 def _extract_learnings(session: dict):
