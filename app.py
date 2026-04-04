@@ -1163,8 +1163,8 @@ function renderInline(text) {
     .replace(/`(.*?)`/g, '<code>$1</code>')
     .replace(/^- (.*$)/gm, '<li>$1</li>')
     .replace(/^\d+\. (.*$)/gm, '<li>$1</li>')
-    .replace(/\n\n/g, '<br><br>')
-    .replace(/\n/g, '<br>');
+    .replace(/\\n\\n/g, '<br><br>')
+    .replace(/\\n/g, '<br>');
 }
 
 function renderMarkdown(text, collapsible) {
