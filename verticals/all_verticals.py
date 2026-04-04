@@ -25,7 +25,17 @@ CHECK ALL OF THESE — flag any that are missing or inadequate:
 - Staging/production environment separation
 - Incident response and rollback procedures
 - DEPLOYMENT: env vars read correctly for target platform, all deps in requirements/package files, no hardcoded ports/paths, console errors in any web UI
-- COST: if using paid APIs, verify actual cost per request against current provider pricing. A 10x cost assumption error kills the business.""",
+- COST: if using paid APIs, verify actual cost per request against current provider pricing. A 10x cost assumption error kills the business.
+
+CODE INTEGRITY RULES — apply to any codebase:
+- Every parameter and threshold must have a source or be flagged as UNKNOWN. "Where did this number come from?"
+- If code was validated (backtested, walk-forward tested, A/B tested), flag any proposed changes that would invalidate those results. "This changes validated logic — previous test results no longer apply."
+- Check for scope creep: features that weren't in the original requirements and add complexity without proven value.
+- Every calculation must be traced: where does the input come from, what transforms it, where does the output go? Don't trust function names — read what the code does.
+- Cold start: what happens on first run with empty data, no history, no cache? If function A feeds function B, what happens when B runs first?
+- Silent failures: for every error handler, ask "what does the user SEE?" If nothing — that's a bug.
+- When you find a bug, search for the same pattern in every other file. Bugs cluster.
+- Parallel paths: if dry run was updated, was live mode updated too? If the API was changed, was the dashboard updated?""",
     },
 
     "ecommerce_platform": {
