@@ -161,10 +161,12 @@ _rate_limits = {}  # IP → {date, count}
 # ═══════════════════════════════════════════════
 # Pricing (verified Apr 2026): Sonnet ~$0.15/analysis (30K in + 4K out), Haiku ~$0.013/analysis
 # BYOK (Bring Your Own Key): user pays AI cost directly, we charge for platform only.
+# Pricing reality: Claude/ChatGPT = $20/mo unlimited. PushBack is an ENHANCEMENT, not replacement.
+# BYOK users already pay for AI — we charge for the framework only.
 TIERS = {
-    "free":       {"analyses_per_month": 2,   "chat_per_analysis": 2,  "model": "haiku",  "byok_analyses": 10},
-    "pro":        {"analyses_per_month": 15,  "chat_per_analysis": 10, "model": "sonnet", "byok_analyses": 999},
-    "enterprise": {"analyses_per_month": 60,  "chat_per_analysis": 50, "model": "sonnet", "byok_analyses": 999},
+    "free":       {"analyses_per_month": 2,   "chat_per_analysis": 2,  "model": "haiku",  "byok_analyses": 999},
+    "pro":        {"analyses_per_month": 30,  "chat_per_analysis": 15, "model": "sonnet", "byok_analyses": 999},
+    "enterprise": {"analyses_per_month": 100, "chat_per_analysis": 50, "model": "sonnet", "byok_analyses": 999},
 }
 # License keys → tier mapping (validated via LemonSqueezy webhook or manual)
 _license_keys = {}  # key → {"tier": "pro"|"enterprise", "email": "...", "activated": "..."}
@@ -1192,29 +1194,29 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
     <div id="pricingSection" style="display:none;margin-top:48px">
       <div style="text-align:center;margin-bottom:24px">
         <div style="font-size:18px;font-weight:700;color:var(--text)">Plans</div>
-        <div style="font-size:14px;color:var(--text3);margin-top:4px">Or bring your own API key for unlimited analyses at any tier</div>
+        <div style="font-size:14px;color:var(--text3);margin-top:4px">Already have Claude or ChatGPT? Add your API key below for <span style="color:var(--green);font-weight:600">unlimited free analyses</span></div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;text-align:center">
         <div style="padding:28px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:12px">
           <div style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Free</div>
           <div style="font-size:32px;font-weight:700;color:var(--text)">$0</div>
-          <div style="font-size:13px;color:var(--text3);margin:8px 0 4px">3 analyses / month</div>
-          <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Basic AI · 2 follow-ups</div>
+          <div style="font-size:13px;color:var(--text3);margin:8px 0 4px">2 analyses / month</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Basic AI · Try before you upgrade</div>
           <div style="font-size:11px;color:var(--text3);padding-top:12px;border-top:1px solid var(--border)">No signup required</div>
         </div>
         <div style="padding:28px 20px;background:var(--accent-light);border:2px solid var(--accent);border-radius:12px;position:relative">
           <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:10px;padding:2px 10px;border-radius:10px;font-weight:600">POPULAR</div>
           <div style="font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Pro</div>
-          <div style="font-size:32px;font-weight:700;color:var(--text)">$49.99<span style="font-size:14px;font-weight:400;color:var(--text3)">/mo</span></div>
-          <div style="font-size:13px;color:var(--text2);margin:8px 0 4px">15 analyses / month</div>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Full-depth AI · 10 follow-ups</div>
+          <div style="font-size:32px;font-weight:700;color:var(--text)">$9.99<span style="font-size:14px;font-weight:400;color:var(--text3)">/mo</span></div>
+          <div style="font-size:13px;color:var(--text2);margin:8px 0 4px">30 analyses / month</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Full-depth AI · 15 follow-ups</div>
           <button class="btn btn-primary btn-sm" onclick="openCheckout('pro')" id="proBuyBtn" style="width:100%">Get Pro</button>
         </div>
         <div style="padding:28px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:12px">
           <div style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Enterprise</div>
-          <div style="font-size:32px;font-weight:700;color:var(--text)">$249<span style="font-size:14px;font-weight:400;color:var(--text3)">/mo</span></div>
-          <div style="font-size:13px;color:var(--text2);margin:8px 0 4px">60 analyses / month</div>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Full-depth AI · 50 follow-ups</div>
+          <div style="font-size:32px;font-weight:700;color:var(--text)">$49.99<span style="font-size:14px;font-weight:400;color:var(--text3)">/mo</span></div>
+          <div style="font-size:13px;color:var(--text2);margin:8px 0 4px">100 analyses / month</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Full-depth AI · 50 follow-ups · Teams</div>
           <button class="btn btn-primary btn-sm" onclick="openCheckout('enterprise')" class="btn btn-dark btn-sm" style="width:100%">Get Enterprise</button>
         </div>
       </div>
@@ -1268,7 +1270,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
             AI-powered analysis — not financial, legal, or professional advice. Verify critical numbers independently.
           </div>
           <div id="upsellBox" style="display:none;margin-top:8px;padding:10px 14px;background:var(--accent-light);border:1px solid var(--accent);border-radius:8px;font-size:12px;color:var(--accent);line-height:1.5">
-            This analysis used our basic AI model. <strong>Upgrade to Pro ($49.99/mo)</strong> for deeper insights — the same model used by enterprise clients, with more detailed benchmarks, stronger cross-document checking, and sharper competitive analysis.
+            This analysis used our basic AI model. <strong>Upgrade to Pro ($9.99/mo)</strong> for deeper insights — the same model used by enterprise clients, with more detailed benchmarks, stronger cross-document checking, and sharper competitive analysis.
             <button class="btn btn-primary btn-sm" style="margin-left:8px" onclick="document.getElementById('pricingSection').style.display='block';document.getElementById('pricingSection').scrollIntoView({behavior:'smooth'})">See Plans</button>
           </div>
           <div class="actions" style="margin-top:10px">
