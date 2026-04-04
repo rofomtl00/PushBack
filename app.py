@@ -724,6 +724,7 @@ CRITICAL — Before flagging something as "missing," search the codebase for it 
 - Before saying "no error handling": search for try/except, error, toast, warning
 - Before saying "no cost controls": search for DAILY_COST, _check_daily_cost, MAX_TOKENS, _track_cost
 - Before saying "no security": search for sanitize, uuid, SSRF, blocked, safe_name
+- Check for STALE CODE: references to removed features (old function names, dead imports, comments about deleted modules, strategy names that don't exist in the registry). If the README says "7 strategies" but the guide text says "8 strategies", flag the inconsistency. Stale references to removed code indicate poor cleanup discipline.
 - If you find the implementation exists, acknowledge it works rather than flagging it as missing. Only critique if the implementation is insufficient, not absent.
 
 Your standards:
