@@ -688,6 +688,7 @@ Your standards:
 - If the documents involve specific tools or platforms (Salesforce, HubSpot, SAP, Shopify, Jira, etc.), use your knowledge of those tools — capabilities, limitations, pricing tiers, common implementation pitfalls, and better alternatives — to evaluate whether the approach is sound. If a competitor could undercut this with a better platform choice, say so.
 - ALWAYS include a section called "What You Might Not Have Considered" — surface emerging trends, alternative approaches, new market opportunities, or industry shifts that the creator hasn't addressed. Back every trend with specific data: market size, growth rate, company examples, and source/year. Never mention a trend without numbers to prove it matters. The other side's consultant will bring these up — the user should hear them first.
 - ALWAYS include a section called "How the Other Side Will Attack This" — if this document is going into a competitive evaluation, negotiation, or board review, identify the 3-5 specific points where an opposing advisor would focus their critique. Frame it as: "If I were the consultant advising the other side of this table, I would target..."
+- If the project is software, a web app, or any user-facing product: evaluate the UX/UI critically. Check for: inconsistent layouts, poor mobile responsiveness, accessibility gaps (contrast, font sizes), confusing navigation, missing feedback states (loading, errors, empty states), scroll fatigue, and any element that would make a non-technical user struggle. Frame UX issues as business risks: "Users who can't find X will abandon the product."
 
 CONFIDENCE TAGGING — You MUST tag your data sources when citing benchmarks or industry data:
 - If the data comes from the "Industry Context" section provided to you (vertical knowledge), cite it as: **(Source: PushBack Industry Data, [year])** — this is researched, dated, and specific.
@@ -856,7 +857,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 .header .status { font-size: 12px; color: var(--text3); }
 
 /* Main container */
-.main { max-width: 720px; margin: 0 auto; padding: 40px 24px; }
+.main { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
 
 /* Upload state */
 .upload-area {
@@ -978,10 +979,11 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
   font-size: 14px; display: none; box-shadow: var(--shadow);
 }
 
-@media (max-width: 600px) {
-  .main { padding: 20px 16px; }
+@media (max-width: 800px) {
+  .main { max-width: 100%; padding: 20px 16px; }
   .upload-area { padding: 30px 16px; }
   .actions { flex-direction: column; }
+  #analysisBox > div { grid-template-columns: 1fr !important; }
 }
 </style>
 </head>
@@ -1055,27 +1057,30 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
       <button class="btn btn-secondary" onclick="location.reload()">Start Over</button>
     </div>
 
-    <!-- Analysis result -->
+    <!-- Analysis + Chat side by side -->
     <div id="analysisBox" style="display:none">
-      <div class="analysis" id="analysisContent"></div>
-
-      <div style="margin-top:12px; padding:12px 16px; background:var(--bg2); border:1px solid var(--border); border-radius:8px; font-size:12px; color:var(--text3); line-height:1.6;">
-        AI-powered analysis — not financial, legal, or professional advice. Benchmarks tagged <strong style="color:var(--text2)">(Source: PushBack Industry Data)</strong> are researched and dated. Benchmarks tagged <strong style="color:var(--text2)">(Source: General industry knowledge)</strong> come from AI training data and may not reflect current market conditions. Verify critical numbers independently before making decisions.
-      </div>
-
-      <div class="actions" style="margin-top:12px">
-        <button class="btn btn-secondary btn-sm" onclick="downloadReport()">Download Report</button>
-        <button class="btn btn-secondary btn-sm" onclick="doAnalyze()">Re-Analyze</button>
-      </div>
-    </div>
-
-    <!-- Chat -->
-    <div id="chatBox" style="display:none">
-      <div style="font-size: 13px; color: var(--text3); margin: 20px 0 8px;">Ask follow-up questions or defend your position:</div>
-      <div id="chatMessages" style="max-height:300px;overflow-y:auto"></div>
-      <div class="chat-input" style="position:sticky;bottom:0;background:var(--bg);padding:8px 0;z-index:10">
-        <input type="text" id="chatInput" placeholder="Type your response..." onkeydown="if(event.key==='Enter')doChat()">
-        <button class="btn btn-primary btn-sm" onclick="doChat()">Send</button>
+      <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start">
+        <!-- Left: Analysis -->
+        <div>
+          <div class="analysis" id="analysisContent" style="max-height:80vh;overflow-y:auto"></div>
+          <div style="margin-top:12px; padding:10px 14px; background:var(--bg2); border:1px solid var(--border); border-radius:8px; font-size:11px; color:var(--text3); line-height:1.5;">
+            AI-powered analysis — not financial, legal, or professional advice. Verify critical numbers independently.
+          </div>
+          <div class="actions" style="margin-top:10px">
+            <button class="btn btn-secondary btn-sm" onclick="downloadReport()">Download Report</button>
+            <button class="btn btn-secondary btn-sm" onclick="doAnalyze()">Re-Analyze</button>
+          </div>
+        </div>
+        <!-- Right: Chat -->
+        <div id="chatBox" style="display:none;position:sticky;top:80px">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">Push Back</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Challenge the analysis or defend your position</div>
+          <div id="chatMessages" style="max-height:50vh;overflow-y:auto;margin-bottom:8px"></div>
+          <div class="chat-input">
+            <input type="text" id="chatInput" placeholder="Type your response..." onkeydown="if(event.key==='Enter')doChat()">
+            <button class="btn btn-primary btn-sm" onclick="doChat()">Send</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
