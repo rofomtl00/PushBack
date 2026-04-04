@@ -954,6 +954,28 @@ def status():
 
 
 # ═══════════════════════════════════════════════
+# MCP ENDPOINT — serves tool list and descriptions for MCP clients
+# ═══════════════════════════════════════════════
+
+@app.route("/mcp/tools")
+def mcp_tools():
+    """Return PushBack's MCP tool definitions for clients that discover via HTTP."""
+    from verticals.all_verticals import VERTICALS as V
+    return jsonify({
+        "name": "pushback",
+        "version": "1.0.0",
+        "tools": [
+            {"name": "analyze_url", "description": "Fetch a webpage and analyze with Big 4-level scrutiny", "parameters": {"url": "string"}},
+            {"name": "analyze_text", "description": "Analyze any pasted text/document content", "parameters": {"text": "string"}},
+            {"name": "analyze_with_vertical", "description": "Analyze with specific industry checklist", "parameters": {"text": "string", "vertical": "string"}},
+            {"name": "list_verticals", "description": "List all available industry verticals", "parameters": {}},
+        ],
+        "verticals": list(V.keys()),
+        "mcp_sse": "/mcp/sse — connect MCP clients here (requires mcp_server.py running locally or on separate port)",
+    })
+
+
+# ═══════════════════════════════════════════════
 # HTML — Professional light theme, clean SaaS UI
 # ═══════════════════════════════════════════════
 
@@ -1612,8 +1634,10 @@ function renderMarkdown(text, collapsible) {
 def main():
     port = int(os.environ.get("PORT", 8080))
     print(f"\n  PushBack — http://localhost:{port}\n")
+    print(f"  MCP: connect to https://your-domain/mcp/sse")
     if port == 8080:
         threading.Timer(1.0, lambda: webbrowser.open(f"http://localhost:{port}")).start()
+
     # Production WSGI server (waitress) — Flask dev server is not production-ready
     try:
         from waitress import serve
