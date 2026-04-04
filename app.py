@@ -492,7 +492,8 @@ CRITICAL: Determine what the CREATOR of these documents is doing, not just what 
 - An actual film production budget and shooting schedule → label "Production Review", vertical: vfx_film
 - A company's insurance renewal documents → label "Insurance Review", vertical: corporate_insurance
 - Source code files for a web application → label "Code Review", vertical: developer
-- Source code that CONTAINS industry-specific content (e.g., Python files with ecommerce data) → label "Code Review", vertical: developer (it's SOFTWARE, not the industry the software is about)
+- Source code that IMPLEMENTS industry-specific logic (e.g., trading bot with P&L calculations, medical dosage calculator, insurance premium engine) → label "Code Review", verticals: developer + the domain vertical (e.g., developer,quant_research,finance_accounting for a trading bot). The code correctness matters AND the domain logic matters.
+- Source code that merely DISPLAYS or STORES industry data without implementing domain logic (e.g., a CRUD app that stores ecommerce orders) → label "Code Review", vertical: developer
 
 Files:
 {file_list}
@@ -505,10 +506,13 @@ Available verticals — pick ALL that apply (the more relevant context, the bett
 
 Examples of multi-vertical selection:
 - Web app source code with HTML/CSS → developer + design_creative (code quality AND UI/UX critique)
+- Trading bot Python code → developer + quant_research + finance_accounting (code quality AND statistical validity AND P&L correctness)
 - Ecommerce platform pitch with project timeline → ecommerce_platform + project_management
 - VFX studio insurance review → vfx_film + corporate_insurance
 - SaaS dashboard code → developer + design_creative (always pair code with design if there's any UI)
+- Medical software → developer + the relevant domain vertical
 - Business plan PDF → pick the most relevant industry vertical, or none if generic
+When in doubt, ADD the domain vertical. Missing a relevant vertical is worse than including an extra one.
 
 {file_type_hint}
 
