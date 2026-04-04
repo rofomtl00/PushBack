@@ -944,7 +944,7 @@ function checkReady() {
     const usage = d.daily_usage || 0;
     const badge = document.getElementById('usageBadge');
     if (badge) badge.textContent = usage > 0 ? usage + ' of 3 free analyses used today' : '';
-    if (!proUrl) document.getElementById('proBuyBtn').style.display = 'none';
+    // URLs loaded — buttons always visible, openCheckout handles fallback
   }).catch(() => {
     const s = Math.round((Date.now() - startTime) / 1000);
     statusEl.textContent = 'Starting up... ' + s + 's';
@@ -1096,12 +1096,19 @@ function downloadReport() {
 
 // Checkout & License
 function openCheckout(tier) {
-  const url = tier === 'pro' ? proUrl : entUrl;
-  if (url) {
-    window.open(url, '_blank');
-  } else {
-    toast('Checkout not configured yet. Contact us for access.');
+  let url = tier === 'pro' ? proUrl : entUrl;
+  if (!url) {
+    // Fallback: fetch fresh from status
+    fetch('/api/status').then(r=>r.json()).then(d=>{
+      proUrl = d.pro_url || '';
+      entUrl = d.ent_url || '';
+      url = tier === 'pro' ? proUrl : entUrl;
+      if (url) { window.location.href = url; }
+      else { toast('Checkout not available yet.'); }
+    });
+    return;
   }
+  window.location.href = url;
 }
 
 async function activateLicense() {
