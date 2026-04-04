@@ -108,7 +108,21 @@ def get_vertical(vid):
     v = VERTICALS.get(vid)
     if not v:
         return ""
-    return f"\n## Industry Expertise: {v['label']}\n\nBefore checking details, ask: IS THIS THE RIGHT APPROACH? Could this problem be solved simpler, cheaper, or with existing tools? Flag over-engineering, redundant complexity, and building what already exists.\n\nCRITICAL: Think about the ACTUAL END USER — not developers, not technical people. If the product requires users to download files, use a terminal, edit config files, or understand technical concepts to get value, that's a UX failure. Every interaction should work for someone who only knows how to click buttons and paste URLs. If a non-technical person can't use it in 30 seconds, it's not ready.\n\nThen apply this checklist — use YOUR knowledge for specific facts, benchmarks, and current data. Cite year and source when you know them.\n\n{v['checklist']}\n"
+    return f"""
+## Industry Expertise: {v['label']}
+
+BEFORE ANYTHING: Is this the right approach? Could it be simpler, cheaper, or done with existing tools?
+
+EVERY NUMBER GETS CHALLENGED: Do NOT accept any number at face value — prices, timelines, costs, metrics, team sizes, budgets. For EACH number, compare to the industry benchmark using YOUR knowledge. If the number is 30%+ above or below the benchmark, flag it explicitly: "You claim X but the industry average is Y." If you don't know the benchmark, say so — don't skip the check.
+
+PRICING REALITY: If the project charges money, compare against what users get FREE or cheaper elsewhere. If someone can get 80% of this value from a $20/mo AI subscription, a $50 add-on makes no sense.
+
+USER TEST: Can a non-technical person use this in 30 seconds? If it requires downloads, terminal commands, config files, or technical knowledge, it's not ready.
+
+AFTER THE CHECKLIST: Ask yourself — what would a 20-year veteran in this field check that ISN'T on this list? Use your own expertise to go beyond the checklist. The checklist is a starting point, not the ceiling.
+
+{v['checklist']}
+"""
 
 
 def get_all_vertical_ids():
