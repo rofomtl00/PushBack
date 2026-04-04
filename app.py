@@ -81,12 +81,18 @@ def _save_learning(learning: dict):
 
 
 def _try_confirm_existing(industry: str, user_text: str):
-    """If a similar pending learning exists, increment its confirmations.
-    At 3 confirmations, promote to validated status."""
+    """If a similar pending learning exists from a DIFFERENT source, increment confirmations.
+    Requires 5 independent confirmations from different IPs before becoming active.
+    Anti-poisoning: same IP can't confirm the same learning twice."""
     if not SUPABASE_KEY:
         return
     try:
         import urllib.request
+        import hashlib
+        # Hash the current user's IP for tracking without storing raw IPs
+        ip = request.remote_addr or "unknown" if 'request' in dir() else "unknown"
+        ip_hash = hashlib.sha256(ip.encode()).hexdigest()[:16]
+
         # Find pending learnings in same industry
         req = urllib.request.Request(
             f"{SUPABASE_URL}/rest/v1/learnings?status=eq.pending&industry=eq.{industry}&limit=20",
@@ -95,28 +101,42 @@ def _try_confirm_existing(industry: str, user_text: str):
         with urllib.request.urlopen(req, timeout=5) as resp:
             pending = json.loads(resp.read())
 
-        # Check for similarity (same keywords in user_said)
         user_words = set(user_text.lower().split())
         for p in pending:
             existing_words = set((p.get("user_said", "") or "").lower().split())
             overlap = len(user_words & existing_words)
-            if overlap >= 3:  # At least 3 words in common = similar correction
-                new_count = (p.get("confirmations", 0) or 0) + 1
-                new_status = "validated" if new_count >= 3 else "pending"
-                data = json.dumps({"confirmations": new_count, "status": new_status}).encode()
-                patch = urllib.request.Request(
-                    f"{SUPABASE_URL}/rest/v1/learnings?id=eq.{p['id']}",
-                    data=data,
-                    headers={
-                        "apikey": SUPABASE_KEY,
-                        "Authorization": f"Bearer {SUPABASE_KEY}",
-                        "Content-Type": "application/json",
-                        "Prefer": "return=minimal",
-                    },
-                    method="PATCH"
-                )
-                urllib.request.urlopen(patch, timeout=5)
-                return  # Confirmed an existing one, don't create new
+            if overlap < 3:
+                continue
+
+            # Check if this IP already confirmed this learning
+            confirmed_by = p.get("confirmed_by", "") or ""
+            if ip_hash in confirmed_by:
+                return  # Same source already confirmed — ignore
+
+            new_count = (p.get("confirmations", 0) or 0) + 1
+            new_confirmed_by = f"{confirmed_by},{ip_hash}" if confirmed_by else ip_hash
+            # Require 5 independent confirmations (different IPs)
+            unique_confirmers = len(set(new_confirmed_by.split(",")))
+            new_status = "validated" if unique_confirmers >= 5 else "pending"
+
+            data = json.dumps({
+                "confirmations": new_count,
+                "status": new_status,
+                "confirmed_by": new_confirmed_by,
+            }).encode()
+            patch = urllib.request.Request(
+                f"{SUPABASE_URL}/rest/v1/learnings?id=eq.{p['id']}",
+                data=data,
+                headers={
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_KEY}",
+                    "Content-Type": "application/json",
+                    "Prefer": "return=minimal",
+                },
+                method="PATCH"
+            )
+            urllib.request.urlopen(patch, timeout=5)
+            return
     except Exception:
         pass
 
