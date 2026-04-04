@@ -27,6 +27,32 @@ _rate_limits = {}  # IP → {count, reset_time}
 MAX_ANALYSES_PER_HOUR = 20
 
 # ═══════════════════════════════════════════════
+# DAILY COST CAP — prevent runaway API spend
+# ═══════════════════════════════════════════════
+_daily_cost = {"date": "", "calls": 0, "est_tokens": 0}
+DAILY_COST_MAX_CALLS = 200       # Max AI calls per day (analysis + classification + chat)
+DAILY_COST_MAX_TOKENS = 5_000_000  # ~$75 at Claude pricing ($15/1M tokens)
+
+def _check_daily_cost(est_input_tokens: int = 0) -> bool:
+    """Returns True if under daily limit, False if limit hit."""
+    from datetime import date
+    today = str(date.today())
+    if _daily_cost["date"] != today:
+        _daily_cost["date"] = today
+        _daily_cost["calls"] = 0
+        _daily_cost["est_tokens"] = 0
+    if _daily_cost["calls"] >= DAILY_COST_MAX_CALLS:
+        return False
+    if _daily_cost["est_tokens"] + est_input_tokens > DAILY_COST_MAX_TOKENS:
+        return False
+    return True
+
+def _track_cost(est_input_tokens: int = 0):
+    """Track a completed API call."""
+    _daily_cost["calls"] += 1
+    _daily_cost["est_tokens"] += est_input_tokens
+
+# ═══════════════════════════════════════════════
 # AI CLIENT — single function, auto-detects provider
 # ═══════════════════════════════════════════════
 
@@ -39,6 +65,12 @@ def _call_ai(system_prompt: str, user_message: str, history: list = None) -> str
     key = _get_api_key()
     if not key:
         return "No API key configured. Set PUSHBACK_API_KEY in environment."
+
+    # Estimate token count (~4 chars per token)
+    est_tokens = (len(system_prompt) + len(user_message) + sum(len(m.get("content", "")) for m in (history or []))) // 4
+    if not _check_daily_cost(est_tokens):
+        return "Daily analysis limit reached. Service resets at midnight UTC. This protects against cost overruns."
+    _track_cost(est_tokens)
 
     messages = []
     if history:
@@ -277,10 +309,29 @@ def upload():
         f.save(path)
         saved.append(path)
 
+    skipped = []
+    if len(files) > len(saved):
+        skipped.append(f"{len(files) - len(saved)} file(s) skipped (over 50MB or total limit reached)")
+
     if not saved:
-        return jsonify({"ok": False, "error": "No files received"}), 400
+        return jsonify({"ok": False, "error": "No files received. Files may exceed the 50MB per-file or 200MB total limit."}), 400
 
     parsed = parse_folder(saved)
+
+    # Check for parse errors and build user-friendly messages
+    parse_errors = []
+    for f in parsed.get("errors", []):
+        err = f.get("error", "")
+        name = f.get("filename", "unknown")
+        if "not installed" in err.lower():
+            parse_errors.append(f"{name}: requires a library not available on the server ({err})")
+        elif err:
+            parse_errors.append(f"{name}: could not be fully parsed — {err}")
+
+    # Check if any files had useful content
+    has_content = any(len(f.get("text", "")) > 20 for f in parsed["files"])
+    if not has_content:
+        return jsonify({"ok": False, "error": "No readable content found in uploaded files. Try PDF, Word, Excel, or text-based formats."}), 400
 
     # Delete files immediately
     try:
@@ -304,6 +355,8 @@ def upload():
         "doc_type": doc_type,
     }
 
+    warnings = parse_errors + skipped
+
     return jsonify({
         "ok": True,
         "session_id": sid,
@@ -312,6 +365,7 @@ def upload():
                     "error": f.get("error")} for f in parsed["files"]],
         "total_chars": parsed["total_chars"],
         "questions": questions,
+        "warnings": warnings,
     })
 
 
@@ -686,6 +740,12 @@ document.getElementById('fileInput').addEventListener('change', async function()
       h += '<div class="file-item"><span class="name">' + esc(f.name) + '</span><span class="meta">' + f.size_kb + ' KB</span>' + badge + '</div>';
     }
     document.getElementById('fileList').innerHTML = h;
+
+    // Show warnings (parse errors, skipped files)
+    if (data.warnings && data.warnings.length) {
+      let wh = data.warnings.map(w => '<div style="padding:6px 12px;background:#fffbeb;border:1px solid #fbbf24;border-radius:6px;font-size:13px;color:#92400e;margin-bottom:4px">' + esc(w) + '</div>').join('');
+      document.getElementById('fileList').innerHTML += wh;
+    }
 
     // Show questions
     if (data.questions && data.questions.length) {
