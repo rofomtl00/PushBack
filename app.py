@@ -711,6 +711,24 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 }
 .q-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
 
+/* Collapsible sections */
+.section-panel { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: var(--bg2); cursor: pointer; user-select: none;
+  font-weight: 600; font-size: 15px; color: var(--text); transition: background 0.15s;
+}
+.section-header:hover { background: var(--bg3); }
+.section-header .arrow { font-size: 12px; color: var(--text3); transition: transform 0.2s; }
+.section-header.open .arrow { transform: rotate(90deg); }
+.section-body { padding: 0 16px 16px; display: none; line-height: 1.8; font-size: 15px; color: var(--text); }
+.section-body.open { display: block; }
+.section-body ul, .section-body ol { padding-left: 20px; margin: 8px 0; }
+.section-body li { margin: 6px 0; }
+.section-body strong { color: var(--text); }
+.section-body blockquote { border-left: 3px solid var(--accent); padding-left: 14px; margin: 12px 0; color: var(--text2); }
+.section-body code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+
 /* Progress */
 .progress {
   text-align: center; padding: 40px; color: var(--text3); font-size: 15px;
@@ -979,7 +997,7 @@ async function doChat() {
   const data = await r.json();
 
   if (data.ok) {
-    msgs.innerHTML += '<div class="chat-msg chat-ai">' + renderMarkdown(data.response) + '</div>';
+    msgs.innerHTML += '<div class="chat-msg chat-ai">' + renderMarkdown(data.response, false) + '</div>';
   } else {
     msgs.innerHTML += '<div class="chat-msg chat-ai" style="color:var(--red)">' + (data.error || 'Error') + '</div>';
   }
@@ -1060,7 +1078,7 @@ function toast(msg) {
   setTimeout(() => t.style.display = 'none', 4000);
 }
 
-function renderMarkdown(text) {
+function renderInline(text) {
   return text
     .replace(/^### (.*$)/gm, '<h3>$1</h3>')
     .replace(/^## (.*$)/gm, '<h2>$1</h2>')
@@ -1069,9 +1087,43 @@ function renderMarkdown(text) {
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     .replace(/`(.*?)`/g, '<code>$1</code>')
     .replace(/^- (.*$)/gm, '<li>$1</li>')
-    .replace(/^\\d+\\. (.*$)/gm, '<li>$1</li>')
-    .replace(/\\n\\n/g, '<br><br>')
-    .replace(/\\n/g, '<br>');
+    .replace(/^\d+\. (.*$)/gm, '<li>$1</li>')
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>');
+}
+
+function renderMarkdown(text, collapsible) {
+  // For chat messages, just render inline
+  if (collapsible === false) return renderInline(text);
+
+  // Split on ## headers into collapsible sections
+  const sections = text.split(/^(?=## )/gm);
+  if (sections.length <= 1) return renderInline(text);
+
+  let html = '';
+  let idx = 0;
+  for (const section of sections) {
+    const trimmed = section.trim();
+    if (!trimmed) continue;
+
+    // Check if this section starts with a ## header
+    const headerMatch = trimmed.match(/^##\s+(.+)/);
+    if (headerMatch) {
+      const title = headerMatch[1].replace(/\*\*/g, '');
+      const body = trimmed.substring(headerMatch[0].length);
+      const isFirst = idx === 0;
+      html += '<div class="section-panel">';
+      html += '<div class="section-header' + (isFirst ? ' open' : '') + '" onclick="this.classList.toggle(\'open\');this.nextElementSibling.classList.toggle(\'open\')">';
+      html += esc(title) + '<span class="arrow">&#9654;</span></div>';
+      html += '<div class="section-body' + (isFirst ? ' open' : '') + '">' + renderInline(body) + '</div>';
+      html += '</div>';
+      idx++;
+    } else {
+      // Content before first header (e.g., "What I'm Reviewing" paragraph)
+      html += '<div style="margin-bottom:12px;line-height:1.8;font-size:15px">' + renderInline(trimmed) + '</div>';
+    }
+  }
+  return html;
 }
 </script>
 </body>
