@@ -4,6 +4,7 @@ PushBack — Upload your files. Get a second opinion.
 
 import os
 import sys
+import json
 import uuid
 import shutil
 import threading
@@ -24,6 +25,135 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 sessions = {}
 MAX_SESSIONS = 500
+LEARNINGS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "learnings.json")
+MAX_LEARNINGS = 200  # Keep last 200 insights
+
+
+def _load_learnings() -> list:
+    """Load accumulated learnings from disk."""
+    try:
+        if os.path.exists(LEARNINGS_PATH):
+            with open(LEARNINGS_PATH, "r") as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return []
+
+
+def _save_learning(learning: dict):
+    """Append a learning and persist. Compresses old entries into summaries."""
+    learnings = _load_learnings()
+    learnings.append(learning)
+
+    # Compress: when over 100 entries, summarize old ones by industry
+    if len(learnings) > 100:
+        old = learnings[:-50]  # Entries to compress
+        keep = learnings[-50:]  # Keep recent 50 as-is
+        # Group old by industry and type
+        summaries = {}
+        for l in old:
+            key = f"{l.get('industry', 'general')}_{l.get('type', 'unknown')}"
+            if key not in summaries:
+                summaries[key] = {"industry": l.get("industry", "general"), "type": l.get("type"), "count": 0, "examples": []}
+            summaries[key]["count"] += 1
+            if len(summaries[key]["examples"]) < 2:  # Keep 2 examples per category
+                summaries[key]["examples"].append(l.get("user_said", "")[:100])
+        # Convert summaries to compact entries
+        compressed = []
+        for key, s in summaries.items():
+            compressed.append({
+                "type": "summary",
+                "industry": s["industry"],
+                "original_type": s["type"],
+                "count": s["count"],
+                "examples": s["examples"],
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
+        learnings = compressed + keep
+
+    try:
+        with open(LEARNINGS_PATH, "w") as f:
+            json.dump(learnings, f)
+    except Exception:
+        pass
+
+
+def _extract_learnings(session: dict):
+    """After a chat session, extract what PushBack learned.
+    Called when sessions are evicted or analysis is re-run."""
+    chat = session.get("chat_history", [])
+    if len(chat) < 4:  # Need at least analysis + 1 user reply + 1 AI reply
+        return
+
+    doc_type = session.get("doc_type", {}).get("label", "unknown")
+
+    # Look for patterns: user correcting PushBack = learning opportunity
+    for i, msg in enumerate(chat):
+        if msg.get("role") != "user" or i < 2:
+            continue
+        text = msg.get("content", "").lower()
+
+        # User defending a point = PushBack may have been wrong
+        defense_signals = ["actually", "that's not correct", "you're wrong",
+                           "no,", "incorrect", "we already", "that's handled",
+                           "we have that", "it's already", "already done",
+                           "not true", "misunderstood"]
+        is_defense = any(s in text for s in defense_signals)
+
+        # User agreeing = PushBack was right
+        agree_signals = ["good point", "didn't think of", "you're right",
+                         "fair point", "i agree", "that's true", "makes sense",
+                         "we should", "i'll fix", "need to address"]
+        is_agreement = any(s in text for s in agree_signals)
+
+        if is_defense or is_agreement:
+            # Get the AI message they're responding to (previous message)
+            ai_msg = chat[i - 1].get("content", "")[:300] if i > 0 else ""
+            user_msg = msg.get("content", "")[:300]
+
+            _save_learning({
+                "type": "defense" if is_defense else "validated",
+                "industry": doc_type,
+                "ai_said": ai_msg,
+                "user_said": user_msg,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
+
+
+def _get_relevant_learnings(doc_type: str, context: str) -> str:
+    """Get learnings relevant to this analysis type."""
+    learnings = _load_learnings()
+    if not learnings:
+        return ""
+
+    # Filter by industry match and recency
+    relevant = []
+    for l in learnings[-100:]:  # Last 100
+        if l.get("industry", "").lower() in doc_type.lower() or doc_type.lower() in l.get("industry", "").lower():
+            relevant.append(l)
+
+    # Also include validated learnings from any industry (universal truths)
+    for l in learnings[-50:]:
+        if l.get("type") == "validated" and l not in relevant:
+            relevant.append(l)
+
+    if not relevant:
+        return ""
+
+    lines = ["\n## Learnings from Previous Analyses"]
+    lines.append("Users have previously corrected or validated these points. Adjust your analysis accordingly:\n")
+
+    for l in relevant[-10:]:  # Max 10 learnings in prompt
+        if l.get("type") == "summary":
+            ot = l.get("original_type", "unknown")
+            label = "Users corrected this" if ot == "defense" else "Users confirmed this"
+            lines.append(f"- {label} {l['count']}x in {l.get('industry','?')} analyses. Examples: {'; '.join(l.get('examples', []))}")
+        elif l.get("type") == "defense":
+            lines.append(f"- CORRECTION ({l.get('industry','?')}): You said: \"{l.get('ai_said','')[:150]}\" → User: \"{l.get('user_said','')[:150]}\" — Verify before re-flagging.")
+        elif l.get("type") == "validated":
+            lines.append(f"- VALIDATED ({l.get('industry','?')}): \"{l.get('ai_said','')[:150]}\" — Keep making similar observations.")
+
+    return "\n".join(lines)
 _rate_limits = {}  # IP → {date, count}
 
 # ═══════════════════════════════════════════════
@@ -332,6 +462,8 @@ def _build_prompt(session: dict) -> str:
     file_map = "\n".join(arch_lines)
 
     claims_map = s.get("claims_map", "")
+    doc_label = s.get("doc_type", {}).get("label", "")
+    learnings = _get_relevant_learnings(doc_label, context)
 
     return f"""Here are {len(files)} files from a project. Read everything carefully before responding.
 
@@ -360,6 +492,8 @@ This lets the reader confirm you understood their work before reading your feedb
 {vertical}
 
 {claims_map}
+
+{learnings}
 
 ## Full Contents
 {context}"""
@@ -452,10 +586,14 @@ def upload():
     # AI classifies the documents — no keyword guessing
     doc_type, vertical_context = _classify_and_load_vertical(parsed["files"], parsed["combined_text"])
 
-    # Evict oldest sessions if at capacity
+    # Evict oldest sessions if at capacity — extract learnings before discarding
     if len(sessions) >= MAX_SESSIONS:
         oldest = sorted(sessions.keys())[:len(sessions) - MAX_SESSIONS + 1]
         for old_sid in oldest:
+            try:
+                _extract_learnings(sessions[old_sid])
+            except Exception:
+                pass
             del sessions[old_sid]
 
     sessions[sid] = {
@@ -504,6 +642,12 @@ def analyze_docs():
     _increment_usage(ip)
 
     s = sessions[sid]
+    # Extract learnings from previous chat before re-analysis
+    if s.get("chat_history"):
+        try:
+            _extract_learnings(s)
+        except Exception:
+            pass
     prompt = _build_prompt(s)
     system = """You are PushBack — a strategic preparation tool for executives who are walking into high-stakes meetings where the other side has McKinsey, Accenture, Deloitte, or PitchBook backing them up.
 
