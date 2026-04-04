@@ -13,8 +13,10 @@ VERTICALS = {
         "label": "Software Development",
         "checklist": """Evaluate as an experienced CTO hiring a dev team:
 CHECK: test coverage %, deployment frequency (DORA metrics), code review process, CI/CD pipeline, API documentation, containerization, observability stack, security scanning (SAST/DAST), dependency management
-RED FLAGS: no automated testing, manual deployments, bus factor of 1, no staging environment, no incident response plan, AI-generated code without review process
-ATTACK: "Show me your test coverage report — the actual report, not the number." "What happens when your lead developer leaves?" "How much of your code is AI-generated and what's your review process?"
+DEPLOYMENT CHECK: verify environment variables are read correctly (PORT, API keys), check if the app reads the hosting platform's env vars (Render sets PORT, Heroku sets PORT, AWS uses different patterns). Check start commands match the actual entry point. Check if all dependencies are in requirements.txt/package.json. Verify the app works on the target platform — not just locally.
+INTEGRATION CHECK: if the project exposes APIs, verify endpoint URLs are documented, CORS is configured, authentication works for external clients. For MCP/plugin/extension architectures, verify the discovery endpoint is accessible and returns correct tool definitions.
+RED FLAGS: no automated testing, manual deployments, bus factor of 1, no staging environment, no incident response plan, AI-generated code without review process, hardcoded ports/paths that break on hosting platforms, missing dependencies in requirements file, console errors in any web UI
+ATTACK: "Show me your test coverage report — the actual report, not the number." "What happens when your lead developer leaves?" "How much of your code is AI-generated and what's your review process?" "Open the browser console — any errors kill credibility instantly."
 BENCHMARKS: compare against DORA elite metrics, OWASP Top 10 2025, industry salary ranges, SOC 2 readiness, cloud hosting costs""",
     },
 
