@@ -160,11 +160,11 @@ _rate_limits = {}  # IP → {date, count}
 # PRICING TIERS
 # ═══════════════════════════════════════════════
 # Pricing: Sonnet ~$1.50/analysis, Haiku ~$0.15/analysis
-# Free uses Haiku (good enough to demo value). Pro+Enterprise use Sonnet (full quality).
+# BYOK (Bring Your Own Key): user pays AI cost directly, we charge for platform only.
 TIERS = {
-    "free":       {"analyses_per_month": 3,   "chat_per_analysis": 2,  "model": "haiku"},
-    "pro":        {"analyses_per_month": 15,  "chat_per_analysis": 10, "model": "sonnet"},
-    "enterprise": {"analyses_per_month": 60,  "chat_per_analysis": 50, "model": "sonnet"},
+    "free":       {"analyses_per_month": 3,   "chat_per_analysis": 2,  "model": "haiku",  "byok_analyses": 10},
+    "pro":        {"analyses_per_month": 15,  "chat_per_analysis": 10, "model": "sonnet", "byok_analyses": 999},
+    "enterprise": {"analyses_per_month": 60,  "chat_per_analysis": 50, "model": "sonnet", "byok_analyses": 999},
 }
 # License keys → tier mapping (validated via LemonSqueezy webhook or manual)
 _license_keys = {}  # key → {"tier": "pro"|"enterprise", "email": "...", "activated": "..."}
@@ -224,17 +224,18 @@ def _get_api_key():
     return os.environ.get("PUSHBACK_API_KEY", "")
 
 
-def _call_ai(system_prompt: str, user_message: str, history: list = None, tier: str = "free") -> str:
-    """Call the AI. Model selected by tier: free/pro use Haiku ($0.15/analysis), enterprise uses Sonnet ($1.50)."""
-    key = _get_api_key()
+def _call_ai(system_prompt: str, user_message: str, history: list = None, tier: str = "free", user_key: str = None) -> str:
+    """Call the AI. If user provides their own key (BYOK), use it directly — zero cost to us."""
+    key = user_key or _get_api_key()
     if not key:
         return "No API key configured. Set PUSHBACK_API_KEY in environment."
 
-    # Estimate token count (~4 chars per token)
-    est_tokens = (len(system_prompt) + len(user_message) + sum(len(m.get("content", "")) for m in (history or []))) // 4
-    if not _check_daily_cost(est_tokens):
-        return "Analysis limit reached. Service resets monthly. This protects against cost overruns."
-    _track_cost(est_tokens)
+    # Cost tracking — skip if BYOK (user pays directly)
+    if not user_key:
+        est_tokens = (len(system_prompt) + len(user_message) + sum(len(m.get("content", "")) for m in (history or []))) // 4
+        if not _check_daily_cost(est_tokens):
+            return "Analysis limit reached. Service resets monthly. This protects against cost overruns."
+        _track_cost(est_tokens)
 
     messages = []
     if history:
@@ -253,8 +254,11 @@ def _call_ai(system_prompt: str, user_message: str, history: list = None, tier: 
         elif key.startswith("sk-ant-"):
             import anthropic
             client = anthropic.Anthropic(api_key=key)
-            # Free: Haiku ($0.25/1M = fast, good enough to demo). Pro+Enterprise: Sonnet ($3/1M = full depth)
-            ai_model = "claude-haiku-4-5-20251001" if tier == "free" else "claude-sonnet-4-20250514"
+            # BYOK: always Sonnet (their key, their cost). Free: Haiku. Pro+Enterprise: Sonnet.
+            if user_key:
+                ai_model = "claude-sonnet-4-20250514"
+            else:
+                ai_model = "claude-haiku-4-5-20251001" if tier == "free" else "claude-sonnet-4-20250514"
             resp = client.messages.create(
                 model=ai_model, max_tokens=4096,
                 system=system_prompt, messages=messages)
@@ -632,17 +636,20 @@ def analyze_docs():
     if sid not in sessions:
         return jsonify({"ok": False, "error": "Session not found"}), 404
 
-    # Tier-based rate limiting
+    # BYOK: user provides their own API key (stored in browser, sent per request)
+    user_key = body.get("user_key", "").strip() or None
+
+    # Tier-based rate limiting — BYOK gets higher limits
     ip = request.remote_addr or "unknown"
     tier = _get_tier(sid)
     tier_limits = TIERS.get(tier, TIERS["free"])
     monthly_usage = _get_monthly_usage(ip)
-    max_analyses = tier_limits["analyses_per_month"]
+    max_analyses = tier_limits["byok_analyses"] if user_key else tier_limits["analyses_per_month"]
     if monthly_usage >= max_analyses:
-        if tier == "free":
-            return jsonify({"ok": False, "error": f"Free tier limit reached ({max_analyses}/month). Upgrade to Pro for deeper analysis + 15/month.", "upgrade": True}), 429
-        else:
-            return jsonify({"ok": False, "error": f"Daily limit reached ({max_analyses} analyses). Resets at midnight UTC."}), 429
+        if tier == "free" and not user_key:
+            return jsonify({"ok": False, "error": f"Free tier limit reached ({max_analyses}/month). Upgrade to Pro or add your own API key for more.", "upgrade": True}), 429
+        elif not user_key:
+            return jsonify({"ok": False, "error": f"Monthly limit reached ({max_analyses} analyses)."}), 429
     _increment_usage(ip)
 
     s = sessions[sid]
@@ -701,8 +708,9 @@ CONFIDENCE TAGGING — You MUST tag your data sources when citing benchmarks or 
 - If you are NOT confident in a specific number, say "approximately" or give a range instead of a false-precision single number.
 - NEVER fabricate a source name. If you don't know where a number comes from, say "industry estimates" not "McKinsey 2025 report" unless you're certain that report exists."""
 
-    result = _call_ai(system, prompt, tier=tier)
+    result = _call_ai(system, prompt, tier=tier, user_key=user_key)
     s["analysis"] = result
+    s["_user_key"] = bool(user_key)  # Track if BYOK for chat
     s["chat_history"] = [
         {"role": "user", "content": prompt},
         {"role": "assistant", "content": result},
@@ -716,6 +724,7 @@ def chat():
     body = request.get_json() or {}
     sid = body.get("session_id", "")
     message = body.get("message", "").strip()
+    user_key = body.get("user_key", "").strip() or None
 
     if sid not in sessions:
         return jsonify({"ok": False, "error": "Session not found"}), 404
@@ -735,8 +744,7 @@ def chat():
     s["chat_history"].append({"role": "user", "content": message})
 
     system = "You are PushBack. Continue your analysis. Be specific. If the user defends a weak point, push harder with evidence. If they have a good answer, acknowledge it and move to the next issue."
-    tier = _get_tier(sid)
-    result = _call_ai(system, message, history=s["chat_history"][:-1], tier=tier)
+    result = _call_ai(system, message, history=s["chat_history"][:-1], tier=tier, user_key=user_key)
 
     s["chat_history"].append({"role": "assistant", "content": result})
     return jsonify({"ok": True, "response": result})
@@ -1108,6 +1116,21 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
       <div id="usageBadge" style="margin-top:16px;font-size:13px;color:var(--text3)"></div>
     </div>
 
+    <!-- BYOK: Bring Your Own Key -->
+    <div style="margin-top:24px;text-align:center">
+      <div id="byokToggle" style="cursor:pointer;font-size:13px;color:var(--accent)" onclick="document.getElementById('byokPanel').style.display=document.getElementById('byokPanel').style.display==='none'?'block':'none'">
+        Have your own AI API key? Use it for unlimited analyses
+      </div>
+      <div id="byokPanel" style="display:none;margin-top:8px">
+        <div style="display:inline-flex;gap:6px;align-items:center">
+          <input type="password" id="byokInput" placeholder="sk-ant-... or gsk_... or sk-..." style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:300px;outline:none">
+          <button class="btn btn-secondary btn-sm" onclick="saveByok()">Save Key</button>
+        </div>
+        <div id="byokStatus" style="font-size:12px;margin-top:6px;color:var(--text3)"></div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Your key is stored in your browser only. We never see or store it server-side.</div>
+      </div>
+    </div>
+
     <!-- Pricing -->
     <div style="margin-top:40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;text-align:center">
       <div style="padding:24px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius)">
@@ -1293,7 +1316,7 @@ async function doAnalyze() {
     const r = await fetch('/api/analyze', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({session_id: sessionId})
+      body: JSON.stringify({session_id: sessionId, user_key: getByok()})
     });
     const data = await r.json();
 
@@ -1335,7 +1358,7 @@ async function doChat() {
   const r = await fetch('/api/chat', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({session_id: sessionId, message: msg})
+    body: JSON.stringify({session_id: sessionId, message: msg, user_key: getByok()})
   });
   const data = await r.json();
 
@@ -1371,6 +1394,27 @@ function downloadReport() {
 
 // Checkout & License
 // URL analysis
+// BYOK: Bring Your Own Key
+function saveByok() {
+  const key = document.getElementById('byokInput').value.trim();
+  const status = document.getElementById('byokStatus');
+  if (!key) { status.textContent = 'Enter a key'; status.style.color = 'var(--red)'; return; }
+  if (!key.startsWith('sk-ant-') && !key.startsWith('gsk_') && !key.startsWith('sk-')) {
+    status.textContent = 'Key must start with sk-ant- (Claude), gsk_ (Groq), or sk- (OpenAI)';
+    status.style.color = 'var(--red)'; return;
+  }
+  localStorage.setItem('pushback_user_key', key);
+  status.textContent = 'Key saved. Your analyses now use your own API — unlimited.';
+  status.style.color = 'var(--green)';
+  document.getElementById('byokToggle').innerHTML = 'Using your own API key <span style="color:var(--green)">Active</span>';
+}
+function getByok() { return localStorage.getItem('pushback_user_key') || ''; }
+
+// Check on load
+if (localStorage.getItem('pushback_user_key')) {
+  document.getElementById('byokToggle').innerHTML = 'Using your own API key <span style="color:var(--green)">Active</span> <span style="cursor:pointer;color:var(--red);font-size:11px" onclick="localStorage.removeItem(\'pushback_user_key\');location.reload()">(remove)</span>';
+}
+
 async function analyzeUrl() {
   const url = document.getElementById('urlInput').value.trim();
   if (!url) { toast('Enter a URL to analyze'); return; }
