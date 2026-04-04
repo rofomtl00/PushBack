@@ -289,17 +289,9 @@ def _call_ai(system_prompt: str, user_message: str, history: list = None, tier: 
 # AI-POWERED CLASSIFICATION — no keyword guessing
 # ═══════════════════════════════════════════════
 
-# Registry: vertical_id → (module_path, description for classifier)
-VERTICALS = {
-    "ecommerce_platform": ("verticals.ecommerce_platform", "Ecommerce platform for physical retailers — BOPIS, POS integration, omnichannel, Shopify/SFCC competitors. Use when the CREATOR is building/pitching an ecommerce platform, NOT when they're analyzing ecommerce companies."),
-    "vfx_film": ("verticals.vfx_film", "VFX, film production, post-production, animation studios. Use when the CREATOR is a VFX/production company pitching for film work, NOT when they're building software for the film industry."),
-    "developer": ("verticals.developer", "Software development, code quality, architecture, DevOps, engineering teams. Use when the CREATOR is building software or evaluating a dev team's technical capability."),
-    "corporate_insurance": ("verticals.corporate_insurance", "Corporate insurance — group benefits, D&O, cyber liability, commercial coverage, brokers. Use when the CREATOR is evaluating or pitching insurance products/coverage."),
-    "project_management": ("verticals.project_management", "Project management, PMO, portfolio governance, Agile/Scrum/SAFe, delivery methodology. Use when the CREATOR is setting up or evaluating PM practices, tools, or team delivery."),
-    "design_creative": ("verticals.design_creative", "Design, charts, data visualization, web/UI design, PDF documents, presentations, branding. Use when the CREATOR is producing visual work — dashboards, websites, reports, pitch decks, or brand assets."),
-    "finance_accounting": ("verticals.finance_accounting", "Accounting, tax, finance, budgets, financial statements, audits. Use when documents contain financial data, tax returns, budgets, forecasts, P&L statements, balance sheets, or personal/corporate tax planning."),
-    "cybersecurity": ("verticals.cybersecurity", "Cybersecurity, information security, compliance, risk assessment, incident response, penetration testing. Use when documents involve security architecture, vulnerability reports, compliance audits, or security product evaluation."),
-}
+# Lightweight verticals — checklists, not encyclopedias. AI fills in facts from its own knowledge.
+from verticals.all_verticals import VERTICALS as _VERT_DATA, get_vertical
+VERTICALS = {vid: (None, v["label"]) for vid, v in _VERT_DATA.items()}
 
 def _ext_to_group(ext: str) -> str:
     """Map file extension to a high-level group for classification hints."""
@@ -444,24 +436,12 @@ VERTICALS: <comma-separated vertical_ids, or none>"""
         doc_type = {"type": "business", "label": "Business Analysis"}
         vertical_ids = []
 
-    # Load individual vertical contexts (kept separate for multi-pass analysis)
-    verticals_loaded = []
+    # Load lightweight checklists — all combined ~12K chars. No multi-pass needed.
+    vertical_context = ""
     for vertical_id in vertical_ids:
-        try:
-            module_path = VERTICALS[vertical_id][0]
-            import importlib
-            mod = importlib.import_module(module_path)
-            verticals_loaded.append({"id": vertical_id, "context": mod.VERTICAL_CONTEXT})
-        except Exception:
-            pass
+        vertical_context += get_vertical(vertical_id)
 
-    # Single vertical: return as before. Multiple: return list for multi-pass.
-    if len(verticals_loaded) <= 1:
-        vertical_context = verticals_loaded[0]["context"] if verticals_loaded else ""
-        return doc_type, vertical_context, []
-    else:
-        # First vertical goes in the main prompt, rest are for separate passes
-        return doc_type, verticals_loaded[0]["context"], verticals_loaded[1:]
+    return doc_type, vertical_context
 
 
 def _build_prompt(session: dict) -> str:
@@ -616,7 +596,7 @@ def upload():
     questions = []  # Let the AI generate relevant questions, not keyword matching
 
     # AI classifies the documents — no keyword guessing
-    doc_type, vertical_context, extra_verticals = _classify_and_load_vertical(parsed["files"], parsed["combined_text"])
+    doc_type, vertical_context = _classify_and_load_vertical(parsed["files"], parsed["combined_text"])
 
     # Evict oldest sessions if at capacity — extract learnings before discarding
     if len(sessions) >= MAX_SESSIONS:
@@ -632,7 +612,6 @@ def upload():
         "files": parsed["files"],
         "context": parsed["combined_text"],
         "claims_map": parsed.get("claims_map", ""),
-        "vertical_context": vertical_context, "extra_verticals": extra_verticals,
         "questions": questions,
         "analysis": None,
         "chat_history": [],
@@ -753,29 +732,7 @@ CONFIDENCE TAGGING — You MUST tag your data sources when citing benchmarks or 
 
     result = _call_ai(system, prompt, tier=tier, user_key=user_key)
 
-    # Multi-vertical: run additional passes and merge into one coherent response
-    extra = s.get("extra_verticals", [])
-    if extra and result and not result.startswith("Analysis limit") and not result.startswith("Document too large"):
-        for ev in extra:
-            extra_prompt = f"""You already analyzed this project. Here is your initial analysis:
-
-{result[:3000]}
-
-Now apply this ADDITIONAL industry expertise and add any NEW findings that the initial analysis missed. Only add new insights — don't repeat what's already covered. Focus on what this specific domain knowledge reveals that general analysis would miss.
-
-{ev['context']}
-
-## Files
-{s['context'][:30000]}
-
-Respond with ONLY the new findings as additional sections. Start each with ##."""
-            extra_result = _call_ai(
-                "You are PushBack. Add domain-specific insights that the initial analysis missed. Be concise — only new findings.",
-                extra_prompt, tier=tier, user_key=user_key
-            )
-            if extra_result and not extra_result.startswith("Analysis limit"):
-                result += "\n\n---\n\n" + extra_result
-
+    # Multi-pass removed — lightweight verticals all fit in one call (~1K each)
     s["analysis"] = result
     s["_user_key"] = bool(user_key)  # Track if BYOK for chat
     s["chat_history"] = [
@@ -945,7 +902,7 @@ def analyze_url():
     files = [{"filename": title or url, "type": ".html", "size_kb": round(len(clean) / 1024, 1),
               "text": clean, "tables": [], "metadata": {"url": url, "title": title}, "error": None}]
 
-    doc_type, vertical_context, extra_verticals = _classify_and_load_vertical(files, context)
+    doc_type, vertical_context = _classify_and_load_vertical(files, context)
 
     if len(sessions) >= MAX_SESSIONS:
         oldest = sorted(sessions.keys())[:len(sessions) - MAX_SESSIONS + 1]
@@ -960,7 +917,6 @@ def analyze_url():
         "files": files,
         "context": context,
         "claims_map": "",
-        "vertical_context": vertical_context, "extra_verticals": extra_verticals,
         "questions": [],
         "analysis": None,
         "chat_history": [],
