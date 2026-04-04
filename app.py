@@ -1166,7 +1166,10 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 
 <div class="header">
   <h1>Push<span>Back</span></h1>
-  <div class="status" id="status">Loading...</div>
+  <div style="display:flex;gap:16px;align-items:center">
+    <a href="#" onclick="document.getElementById('pricingSection').style.display='block';document.getElementById('pricingSection').scrollIntoView({behavior:'smooth'});return false" style="font-size:13px;color:var(--text3);text-decoration:none">Pricing</a>
+    <div class="status" id="status">Loading...</div>
+  </div>
 </div>
 
 <div class="main">
@@ -1191,8 +1194,8 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
       <div id="usageBadge" style="margin-top:16px;font-size:13px;color:var(--text3)"></div>
     </div>
 
-    <!-- Pricing -->
-    <div style="margin-top:48px">
+    <!-- Pricing (hidden by default — shown on limit hit, header link, or upsell click) -->
+    <div id="pricingSection" style="display:none;margin-top:48px">
       <div style="text-align:center;margin-bottom:24px">
         <div style="font-size:18px;font-weight:700;color:var(--text)">Plans</div>
         <div style="font-size:14px;color:var(--text3);margin-top:4px">Or bring your own API key for unlimited analyses at any tier</div>
@@ -1223,8 +1226,8 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
       </div>
     </div>
 
-    <!-- Account: License + BYOK in one clean section -->
-    <div style="margin-top:32px;padding:20px;background:var(--bg2);border:1px solid var(--border);border-radius:12px">
+    <!-- Account: License + BYOK (part of pricing section) -->
+    <div style="margin-top:20px;padding:20px;background:var(--bg2);border:1px solid var(--border);border-radius:12px">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
         <!-- License key -->
         <div>
@@ -1243,6 +1246,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
       </div>
       <div id="byokToggle" style="font-size:11px;color:var(--text3);margin-top:8px;text-align:center">Keys stored in your browser only. Never sent to our servers.</div>
     </div>
+    </div><!-- /pricingSection -->
   </div>
 
   <!-- State 2: Files loaded, ready to analyze -->
@@ -1271,7 +1275,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
           </div>
           <div id="upsellBox" style="display:none;margin-top:8px;padding:10px 14px;background:var(--accent-light);border:1px solid var(--accent);border-radius:8px;font-size:12px;color:var(--accent);line-height:1.5">
             This analysis used our basic AI model. <strong>Upgrade to Pro ($49.99/mo)</strong> for deeper insights — the same model used by enterprise clients, with more detailed benchmarks, stronger cross-document checking, and sharper competitive analysis.
-            <button class="btn btn-primary btn-sm" style="margin-left:8px" onclick="openCheckout('pro')">Upgrade</button>
+            <button class="btn btn-primary btn-sm" style="margin-left:8px" onclick="document.getElementById('pricingSection').style.display='block';document.getElementById('pricingSection').scrollIntoView({behavior:'smooth'})">See Plans</button>
           </div>
           <div class="actions" style="margin-top:10px">
             <button class="btn btn-secondary btn-sm" onclick="downloadReport()">Download Report</button>
@@ -1413,7 +1417,7 @@ async function doAnalyze() {
       if (data.upgrade) {
         toast(data.error);
         btn.textContent = 'Upgrade to Continue';
-        btn.onclick = () => openCheckout('pro');
+        btn.onclick = () => { document.getElementById('pricingSection').style.display='block'; document.getElementById('pricingSection').scrollIntoView({behavior:'smooth'}); };
       } else {
         toast(data.error || 'Analysis failed');
         btn.textContent = 'Retry';
