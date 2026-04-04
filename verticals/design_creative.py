@@ -202,6 +202,38 @@ When presenting visual work to a design-led organization, their creative directo
 8. "This PDF is 45MB. Why? What did you embed that's this large?"
 9. "How many fonts are loaded on this page? Each one adds to load time."
 10. "What does this look like when translated to French? (25% longer text on average)"
+
+### Emerging Trends
+
+**AI-Generated Design (2026):**
+- Midjourney, DALL-E, Firefly — AI generates visuals faster than designers. But AI output lacks brand consistency and often fails accessibility standards.
+- Figma AI (auto-layout suggestions, component generation) — speeds up production 40%
+- If the team uses no AI design tools, they're 30-50% slower than competitors who do.
+
+**Design Systems as Products:**
+- Companies selling their design systems (IBM Carbon, Salesforce Lightning, Shopify Polaris)
+- 73% of enterprise companies have a design system (Source: Sparkbox, 2026)
+- No design system = inconsistent UI, slower development, higher maintenance cost
+
+**Motion & Micro-Interactions:**
+- Static pages feel dead in 2026. Subtle animations (page transitions, hover states, loading sequences) signal quality.
+- Framer Motion, Lottie, GSAP — standard tools for web animation
+- But: every animation must respect `prefers-reduced-motion` or it's an accessibility violation
+
+**Variable Fonts & Responsive Typography:**
+- Single font file that adjusts weight, width, optical size dynamically
+- Reduces page weight by 60-80% vs loading multiple font files
+- If still loading 4 separate Google Font weights, that's 400KB of unnecessary downloads
+
+**Dark Mode as Expectation:**
+- 82% of smartphone users enable dark mode (Source: Android Authority, 2025)
+- Products without dark mode feel incomplete to technical audiences
+- Implementation: CSS `prefers-color-scheme` media query + CSS custom properties
+
+**Figma-to-Code Pipelines:**
+- Figma Dev Mode, Anima, Locofy — design directly generates production code
+- Reduces handoff friction between design and engineering teams
+- If the workflow is still "designer makes PSD, developer rebuilds in CSS," that's 2015 process
 """
 
 
