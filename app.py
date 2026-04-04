@@ -442,18 +442,24 @@ VERTICALS: <comma-separated vertical_ids, or none>"""
         doc_type = {"type": "business", "label": "Business Analysis"}
         vertical_ids = []
 
-    # Load all matched vertical contexts (AI decides which ones apply)
-    vertical_context = ""
+    # Load individual vertical contexts (kept separate for multi-pass analysis)
+    verticals_loaded = []
     for vertical_id in vertical_ids:
         try:
             module_path = VERTICALS[vertical_id][0]
             import importlib
             mod = importlib.import_module(module_path)
-            vertical_context += "\n\n" + mod.VERTICAL_CONTEXT
+            verticals_loaded.append({"id": vertical_id, "context": mod.VERTICAL_CONTEXT})
         except Exception:
             pass
 
-    return doc_type, vertical_context
+    # Single vertical: return as before. Multiple: return list for multi-pass.
+    if len(verticals_loaded) <= 1:
+        vertical_context = verticals_loaded[0]["context"] if verticals_loaded else ""
+        return doc_type, vertical_context, []
+    else:
+        # First vertical goes in the main prompt, rest are for separate passes
+        return doc_type, verticals_loaded[0]["context"], verticals_loaded[1:]
 
 
 def _build_prompt(session: dict) -> str:
@@ -608,7 +614,7 @@ def upload():
     questions = []  # Let the AI generate relevant questions, not keyword matching
 
     # AI classifies the documents — no keyword guessing
-    doc_type, vertical_context = _classify_and_load_vertical(parsed["files"], parsed["combined_text"])
+    doc_type, vertical_context, extra_verticals = _classify_and_load_vertical(parsed["files"], parsed["combined_text"])
 
     # Evict oldest sessions if at capacity — extract learnings before discarding
     if len(sessions) >= MAX_SESSIONS:
@@ -624,7 +630,7 @@ def upload():
         "files": parsed["files"],
         "context": parsed["combined_text"],
         "claims_map": parsed.get("claims_map", ""),
-        "vertical_context": vertical_context,
+        "vertical_context": vertical_context, "extra_verticals": extra_verticals,
         "questions": questions,
         "analysis": None,
         "chat_history": [],
@@ -743,6 +749,30 @@ CONFIDENCE TAGGING — You MUST tag your data sources when citing benchmarks or 
 - NEVER fabricate a source name. If you don't know where a number comes from, say "industry estimates" not "McKinsey 2025 report" unless you're certain that report exists."""
 
     result = _call_ai(system, prompt, tier=tier, user_key=user_key)
+
+    # Multi-vertical: run additional passes and merge into one coherent response
+    extra = s.get("extra_verticals", [])
+    if extra and result and not result.startswith("Analysis limit") and not result.startswith("Document too large"):
+        for ev in extra:
+            extra_prompt = f"""You already analyzed this project. Here is your initial analysis:
+
+{result[:3000]}
+
+Now apply this ADDITIONAL industry expertise and add any NEW findings that the initial analysis missed. Only add new insights — don't repeat what's already covered. Focus on what this specific domain knowledge reveals that general analysis would miss.
+
+{ev['context']}
+
+## Files
+{s['context'][:30000]}
+
+Respond with ONLY the new findings as additional sections. Start each with ##."""
+            extra_result = _call_ai(
+                "You are PushBack. Add domain-specific insights that the initial analysis missed. Be concise — only new findings.",
+                extra_prompt, tier=tier, user_key=user_key
+            )
+            if extra_result and not extra_result.startswith("Analysis limit"):
+                result += "\n\n---\n\n" + extra_result
+
     s["analysis"] = result
     s["_user_key"] = bool(user_key)  # Track if BYOK for chat
     s["chat_history"] = [
@@ -912,7 +942,7 @@ def analyze_url():
     files = [{"filename": title or url, "type": ".html", "size_kb": round(len(clean) / 1024, 1),
               "text": clean, "tables": [], "metadata": {"url": url, "title": title}, "error": None}]
 
-    doc_type, vertical_context = _classify_and_load_vertical(files, context)
+    doc_type, vertical_context, extra_verticals = _classify_and_load_vertical(files, context)
 
     if len(sessions) >= MAX_SESSIONS:
         oldest = sorted(sessions.keys())[:len(sessions) - MAX_SESSIONS + 1]
@@ -927,7 +957,7 @@ def analyze_url():
         "files": files,
         "context": context,
         "claims_map": "",
-        "vertical_context": vertical_context,
+        "vertical_context": vertical_context, "extra_verticals": extra_verticals,
         "questions": [],
         "analysis": None,
         "chat_history": [],
@@ -1022,6 +1052,8 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 .btn-primary:disabled { background: #93c5fd; cursor: wait; }
 .btn-secondary { background: var(--bg3); color: var(--text2); }
 .btn-secondary:hover { background: var(--border); }
+.btn-dark { background: #111827; color: #fff; }
+.btn-dark:hover { background: #1f2937; }
 .btn-sm { padding: 8px 16px; font-size: 13px; }
 
 /* File list */
@@ -1186,7 +1218,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
           <div style="font-size:32px;font-weight:700;color:var(--text)">$249<span style="font-size:14px;font-weight:400;color:var(--text3)">/mo</span></div>
           <div style="font-size:13px;color:var(--text2);margin:8px 0 4px">60 analyses / month</div>
           <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Full-depth AI · 50 follow-ups</div>
-          <button class="btn btn-primary btn-sm" onclick="openCheckout('enterprise')" style="width:100%;background:#111827">Get Enterprise</button>
+          <button class="btn btn-primary btn-sm" onclick="openCheckout('enterprise')" class="btn btn-dark btn-sm" style="width:100%">Get Enterprise</button>
         </div>
       </div>
     </div>
