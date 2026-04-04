@@ -1188,7 +1188,7 @@ function renderMarkdown(text, collapsible) {
       const body = trimmed.substring(headerMatch[0].length);
       const isFirst = idx === 0;
       html += '<div class="section-panel">';
-      html += '<div class="section-header' + (isFirst ? ' open' : '') + '" onclick="this.classList.toggle(\'open\');this.nextElementSibling.classList.toggle(\'open\')">';
+      html += '<div class="section-header' + (isFirst ? ' open' : '') + '" onclick="this.classList.toggle(&quot;open&quot;);this.nextElementSibling.classList.toggle(&quot;open&quot;)">';
       html += esc(title) + '<span class="arrow">&#9654;</span></div>';
       html += '<div class="section-body' + (isFirst ? ' open' : '') + '">' + renderInline(body) + '</div>';
       html += '</div>';
