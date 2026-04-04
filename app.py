@@ -285,6 +285,7 @@ VERTICALS = {
     "developer": ("verticals.developer", "Software development, code quality, architecture, DevOps, engineering teams. Use when the CREATOR is building software or evaluating a dev team's technical capability."),
     "corporate_insurance": ("verticals.corporate_insurance", "Corporate insurance — group benefits, D&O, cyber liability, commercial coverage, brokers. Use when the CREATOR is evaluating or pitching insurance products/coverage."),
     "project_management": ("verticals.project_management", "Project management, PMO, portfolio governance, Agile/Scrum/SAFe, delivery methodology. Use when the CREATOR is setting up or evaluating PM practices, tools, or team delivery."),
+    "design_creative": ("verticals.design_creative", "Design, charts, data visualization, web/UI design, PDF documents, presentations, branding. Use when the CREATOR is producing visual work — dashboards, websites, reports, pitch decks, or brand assets."),
 }
 
 def _ext_to_group(ext: str) -> str:
@@ -361,7 +362,8 @@ def _classify_and_load_vertical(files: list, context: str) -> tuple:
         hints = {
             "code": "HINT: Majority of files are source code (.py, .js, .ts, etc). This is likely a software project. Use 'developer' vertical unless the content clearly indicates otherwise.",
             "spreadsheet": "HINT: Majority of files are spreadsheets (.xlsx, .csv). Could be financial data, project data, or analytics. Classify based on content, not file type.",
-            "presentation": "HINT: Majority of files are presentations (.pptx). Could be a pitch deck, training material, or proposal. Classify based on content.",
+            "presentation": "HINT: Majority of files are presentations (.pptx). Could be a pitch deck, training material, or proposal. Consider design_creative vertical for visual critique. Classify based on content.",
+            "image": "HINT: Majority of files are images. Could be design mockups, charts, screenshots, or brand assets. Consider design_creative vertical.",
             "video": "HINT: Majority of files are video/project files. Likely film, VFX, or media production.",
             "audio": "HINT: Majority of files are audio/music files. Likely music or audio production.",
             "3d_graphics": "HINT: Majority of files are 3D/graphics project files (.blend, .psd, .ma, etc). Likely VFX, design, or creative production.",
