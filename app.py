@@ -181,6 +181,21 @@ def _classify_and_load_vertical(files: list, context: str) -> tuple:
         f"- {vid}: {desc}" for vid, (_, desc) in VERTICALS.items()
     )
 
+    # Fast path: if majority of files are code, skip the AI call
+    code_exts = {".py", ".js", ".ts", ".tsx", ".jsx", ".go", ".rs", ".java",
+                 ".cpp", ".c", ".h", ".rb", ".php", ".swift", ".kt",
+                 ".html", ".css", ".scss", ".sql", ".sh", ".json", ".yaml", ".yml", ".toml"}
+    code_count = sum(1 for f in files if f.get("type") in code_exts)
+    if code_count > len(files) / 2:
+        # Definitely a code project — don't let content keywords mislead the classifier
+        try:
+            module_path = VERTICALS["developer"][0]
+            import importlib
+            mod = importlib.import_module(module_path)
+            return {"type": "code_review", "label": "Code Review"}, mod.VERTICAL_CONTEXT
+        except Exception:
+            return {"type": "code_review", "label": "Code Review"}, ""
+
     classify_prompt = f"""Classify these uploaded documents. You must determine:
 1. What TYPE of document/project this is (the label shown to the user)
 2. Which specialized vertical knowledge base (if any) should be loaded
@@ -191,6 +206,7 @@ CRITICAL: Determine what the CREATOR of these documents is doing, not just what 
 - An actual film production budget and shooting schedule → label "Production Review", vertical: vfx_film
 - A company's insurance renewal documents → label "Insurance Review", vertical: corporate_insurance
 - Source code files for a web application → label "Code Review", vertical: developer
+- Source code that CONTAINS industry-specific content (e.g., Python files with ecommerce data) → label "Code Review", vertical: developer (it's SOFTWARE, not the industry the software is about)
 
 Files:
 {file_list}
@@ -764,8 +780,8 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
   <!-- State 1: Upload -->
   <div id="uploadState">
     <div class="upload-area">
-      <h2>Know what the other side will say before you walk in.</h2>
-      <p>The people across the table have McKinsey decks and Bloomberg data. PushBack reads your files, applies the same scrutiny they will, and shows you where you're exposed — before the meeting, not during it.</p>
+      <h2>Get the feedback your team won't give you.</h2>
+      <p>Upload your pitch deck, business plan, code, budget, or proposal. PushBack applies the same scrutiny that a Big 4 evaluator, competing consultant, or due diligence team would — and shows you where you're exposed.</p>
       <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">Select Files</button>
       <input type="file" id="fileInput" multiple style="display:none">
       <div class="hint">
