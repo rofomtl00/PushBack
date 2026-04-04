@@ -407,15 +407,21 @@ Files:
 Content preview:
 {preview}
 
-Available verticals (pick up to TWO if the project spans multiple domains, or "none"):
+Available verticals — pick ALL that apply (the more relevant context, the better the analysis):
 {vertical_options}
+
+Examples of multi-vertical selection:
+- Web app source code with HTML/CSS → developer + design_creative (code quality AND UI/UX critique)
+- Ecommerce platform pitch with project timeline → ecommerce_platform + project_management
+- VFX studio insurance review → vfx_film + corporate_insurance
+- SaaS dashboard code → developer + design_creative (always pair code with design if there's any UI)
+- Business plan PDF → pick the most relevant industry vertical, or none if generic
 
 {file_type_hint}
 
 Respond in EXACTLY this format, nothing else:
 LABEL: <short label for the user, 2-3 words>
-VERTICAL: <vertical_id or none>
-VERTICAL2: <second vertical_id or none>"""
+VERTICALS: <comma-separated vertical_ids, or none>"""
 
     try:
         result = _call_ai("You are a document classifier. Respond only in the exact format requested. No explanation.", classify_prompt)
@@ -425,25 +431,18 @@ VERTICAL2: <second vertical_id or none>"""
             line = line.strip()
             if line.upper().startswith("LABEL:"):
                 label = line.split(":", 1)[1].strip()
-            elif line.upper().startswith("VERTICAL"):
-                vid = line.split(":", 1)[1].strip().lower()
-                if vid and vid != "none" and vid in VERTICALS:
-                    vertical_ids.append(vid)
+            elif line.upper().startswith("VERTICALS:") or line.upper().startswith("VERTICAL:"):
+                raw = line.split(":", 1)[1].strip().lower()
+                for vid in raw.replace(" ", "").split(","):
+                    vid = vid.strip()
+                    if vid and vid != "none" and vid in VERTICALS and vid not in vertical_ids:
+                        vertical_ids.append(vid)
         doc_type = {"type": label.lower().replace(" ", "_"), "label": label}
     except Exception:
         doc_type = {"type": "business", "label": "Business Analysis"}
         vertical_ids = []
 
-    # Auto-detect: code files with HTML/CSS → also load design vertical
-    if any(v == "developer" for v in vertical_ids):
-        has_html = any("<html" in (f.get("text", "")[:5000]).lower() or
-                       "css" in (f.get("text", "")[:5000]).lower() or
-                       f.get("type") in (".html", ".css")
-                       for f in files)
-        if has_html and "design_creative" not in vertical_ids:
-            vertical_ids.append("design_creative")
-
-    # Load all matched vertical contexts
+    # Load all matched vertical contexts (AI decides which ones apply)
     vertical_context = ""
     for vertical_id in vertical_ids:
         try:
