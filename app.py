@@ -23,19 +23,53 @@ UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 sessions = {}
-MAX_SESSIONS = 500  # Prevent unbounded memory growth on Render (512MB free tier)
-_rate_limits = {}  # IP → {count, reset_time}
-MAX_ANALYSES_PER_HOUR = 20
+MAX_SESSIONS = 500
+_rate_limits = {}  # IP → {date, count}
 
 # ═══════════════════════════════════════════════
-# DAILY COST CAP — prevent runaway API spend
+# PRICING TIERS
+# ═══════════════════════════════════════════════
+TIERS = {
+    "free":       {"analyses_per_day": 3,   "chat_per_analysis": 2},
+    "pro":        {"analyses_per_day": 15,  "chat_per_analysis": 10},
+    "enterprise": {"analyses_per_day": 200, "chat_per_analysis": 50},
+}
+# License keys → tier mapping (validated via LemonSqueezy webhook or manual)
+_license_keys = {}  # key → {"tier": "pro"|"enterprise", "email": "...", "activated": "..."}
+LEMON_SQUEEZY_PRO_URL = os.environ.get("PUSHBACK_LS_PRO_URL", "")
+LEMON_SQUEEZY_ENT_URL = os.environ.get("PUSHBACK_LS_ENT_URL", "")
+LEMON_SQUEEZY_WEBHOOK_SECRET = os.environ.get("PUSHBACK_LS_WEBHOOK_SECRET", "")
+
+def _get_tier(sid: str) -> str:
+    """Get the tier for a session."""
+    s = sessions.get(sid, {})
+    return s.get("tier", "free")
+
+def _get_daily_usage(ip: str) -> int:
+    """Get analysis count for today for this IP."""
+    from datetime import date
+    today = str(date.today())
+    rl = _rate_limits.get(ip, {})
+    if rl.get("date") != today:
+        return 0
+    return rl.get("count", 0)
+
+def _increment_usage(ip: str):
+    """Track an analysis."""
+    from datetime import date
+    today = str(date.today())
+    if ip not in _rate_limits or _rate_limits[ip].get("date") != today:
+        _rate_limits[ip] = {"date": today, "count": 0}
+    _rate_limits[ip]["count"] += 1
+
+# ═══════════════════════════════════════════════
+# DAILY COST CAP — prevent runaway API spend (server-wide)
 # ═══════════════════════════════════════════════
 _daily_cost = {"date": "", "calls": 0, "est_tokens": 0}
-DAILY_COST_MAX_CALLS = 200       # Max AI calls per day (analysis + classification + chat)
-DAILY_COST_MAX_TOKENS = 5_000_000  # ~$75 at Claude pricing ($15/1M tokens)
+DAILY_COST_MAX_CALLS = 200
+DAILY_COST_MAX_TOKENS = 5_000_000
 
 def _check_daily_cost(est_input_tokens: int = 0) -> bool:
-    """Returns True if under daily limit, False if limit hit."""
     from datetime import date
     today = str(date.today())
     if _daily_cost["date"] != today:
@@ -49,7 +83,6 @@ def _check_daily_cost(est_input_tokens: int = 0) -> bool:
     return True
 
 def _track_cost(est_input_tokens: int = 0):
-    """Track a completed API call."""
     _daily_cost["calls"] += 1
     _daily_cost["est_tokens"] += est_input_tokens
 
@@ -383,19 +416,18 @@ def analyze_docs():
     if sid not in sessions:
         return jsonify({"ok": False, "error": "Session not found"}), 404
 
-    # Rate limit — prevent API cost abuse
-    import time
+    # Tier-based rate limiting
     ip = request.remote_addr or "unknown"
-    now = time.time()
-    if ip in _rate_limits:
-        rl = _rate_limits[ip]
-        if now - rl["reset"] > 3600:
-            _rate_limits[ip] = {"count": 0, "reset": now}
-        elif rl["count"] >= MAX_ANALYSES_PER_HOUR:
-            return jsonify({"ok": False, "error": "Rate limit reached. Please try again in an hour."}), 429
-    else:
-        _rate_limits[ip] = {"count": 0, "reset": now}
-    _rate_limits[ip]["count"] += 1
+    tier = _get_tier(sid)
+    tier_limits = TIERS.get(tier, TIERS["free"])
+    daily_usage = _get_daily_usage(ip)
+    max_analyses = tier_limits["analyses_per_day"]
+    if daily_usage >= max_analyses:
+        if tier == "free":
+            return jsonify({"ok": False, "error": f"Free tier limit reached ({max_analyses}/day). Upgrade to Pro for 15 analyses/day.", "upgrade": True}), 429
+        else:
+            return jsonify({"ok": False, "error": f"Daily limit reached ({max_analyses} analyses). Resets at midnight UTC."}), 429
+    _increment_usage(ip)
 
     s = sessions[sid]
     prompt = _build_prompt(s)
@@ -454,6 +486,15 @@ def chat():
         return jsonify({"ok": False, "error": "No message"}), 400
 
     s = sessions[sid]
+    tier = _get_tier(sid)
+    max_chats = TIERS.get(tier, TIERS["free"])["chat_per_analysis"]
+    chat_count = sum(1 for m in s.get("chat_history", []) if m.get("role") == "user")
+    if chat_count >= max_chats:
+        if tier == "free":
+            return jsonify({"ok": False, "error": f"Free tier: {max_chats} follow-up messages per analysis. Upgrade to Pro for more.", "upgrade": True}), 429
+        else:
+            return jsonify({"ok": False, "error": f"Chat limit reached ({max_chats} messages for this analysis)."}), 429
+
     s["chat_history"].append({"role": "user", "content": message})
 
     system = "You are PushBack. Continue your analysis. Be specific. If the user defends a weak point, push harder with evidence. If they have a good answer, acknowledge it and move to the next issue."
@@ -463,9 +504,81 @@ def chat():
     return jsonify({"ok": True, "response": result})
 
 
+@app.route("/api/activate", methods=["POST"])
+def activate_license():
+    """Activate a license key for a session."""
+    body = request.get_json() or {}
+    sid = body.get("session_id", "")
+    key = body.get("license_key", "").strip()
+    if sid not in sessions:
+        return jsonify({"ok": False, "error": "Session not found"}), 404
+    if not key:
+        return jsonify({"ok": False, "error": "No license key provided"}), 400
+
+    # Check local cache first
+    if key in _license_keys:
+        tier = _license_keys[key]["tier"]
+        sessions[sid]["tier"] = tier
+        return jsonify({"ok": True, "tier": tier})
+
+    # Validate with LemonSqueezy API
+    try:
+        import urllib.request, json as _json
+        req = urllib.request.Request(
+            "https://api.lemonsqueezy.com/v1/licenses/validate",
+            data=_json.dumps({"license_key": key}).encode(),
+            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = _json.loads(resp.read())
+        if data.get("valid"):
+            variant = data.get("meta", {}).get("variant_name", "").lower()
+            if "enterprise" in variant:
+                tier = "enterprise"
+            else:
+                tier = "pro"
+            _license_keys[key] = {"tier": tier, "email": data.get("meta", {}).get("customer_email", "")}
+            sessions[sid]["tier"] = tier
+            return jsonify({"ok": True, "tier": tier})
+        else:
+            return jsonify({"ok": False, "error": "Invalid or expired license key"}), 400
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"License validation failed: {e}"}), 500
+
+
+@app.route("/api/webhook/lemonsqueezy", methods=["POST"])
+def ls_webhook():
+    """LemonSqueezy webhook — auto-activate keys on purchase."""
+    import hmac, hashlib
+    if LEMON_SQUEEZY_WEBHOOK_SECRET:
+        sig = request.headers.get("X-Signature", "")
+        body_bytes = request.get_data()
+        expected = hmac.new(LEMON_SQUEEZY_WEBHOOK_SECRET.encode(), body_bytes, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(sig, expected):
+            return "Invalid signature", 403
+    data = request.get_json() or {}
+    event = data.get("meta", {}).get("event_name", "")
+    if event == "license_key_created":
+        key = data.get("data", {}).get("attributes", {}).get("key", "")
+        variant = data.get("data", {}).get("attributes", {}).get("variant_name", "").lower()
+        if key:
+            tier = "enterprise" if "enterprise" in variant else "pro"
+            _license_keys[key] = {"tier": tier}
+    return "OK", 200
+
+
 @app.route("/api/status")
 def status():
-    return jsonify({"has_api_key": bool(_get_api_key()), "sessions": len(sessions)})
+    ip = request.remote_addr or "unknown"
+    daily_usage = _get_daily_usage(ip)
+    return jsonify({
+        "has_api_key": bool(_get_api_key()),
+        "sessions": len(sessions),
+        "daily_usage": daily_usage,
+        "pro_url": LEMON_SQUEEZY_PRO_URL,
+        "ent_url": LEMON_SQUEEZY_ENT_URL,
+    })
 
 
 # ═══════════════════════════════════════════════
@@ -641,6 +754,39 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
         PDF · Word · Excel · PowerPoint · CSV · Images · Code<br>
         Files are parsed and immediately deleted. Nothing is stored.
       </div>
+      <div id="usageBadge" style="margin-top:16px;font-size:13px;color:var(--text3)"></div>
+    </div>
+
+    <!-- Pricing -->
+    <div style="margin-top:40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;text-align:center">
+      <div style="padding:24px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius)">
+        <div style="font-size:13px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Free</div>
+        <div style="font-size:28px;font-weight:700;color:var(--text)">$0</div>
+        <div style="font-size:13px;color:var(--text3);margin:8px 0 16px">3 analyses/day · 2 follow-ups each</div>
+        <div style="font-size:12px;color:var(--text3)">No signup required</div>
+      </div>
+      <div style="padding:24px;background:var(--accent-light);border:2px solid var(--accent);border-radius:var(--radius)">
+        <div style="font-size:13px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Pro</div>
+        <div style="font-size:28px;font-weight:700;color:var(--text)">$29.99<span style="font-size:14px;font-weight:400;color:var(--text3)">/mo</span></div>
+        <div style="font-size:13px;color:var(--text2);margin:8px 0 16px">15 analyses/day · 10 follow-ups each</div>
+        <button class="btn btn-primary btn-sm" onclick="openCheckout('pro')" id="proBuyBtn">Get Pro</button>
+      </div>
+      <div style="padding:24px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius)">
+        <div style="font-size:13px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Enterprise</div>
+        <div style="font-size:28px;font-weight:700;color:var(--text)">$199<span style="font-size:14px;font-weight:400;color:var(--text3)">/mo</span></div>
+        <div style="font-size:13px;color:var(--text2);margin:8px 0 16px">Unlimited analyses · 50 follow-ups each</div>
+        <button class="btn btn-secondary btn-sm" onclick="openCheckout('enterprise')">Get Enterprise</button>
+      </div>
+    </div>
+
+    <!-- License key activation -->
+    <div style="margin-top:16px;text-align:center">
+      <div style="font-size:13px;color:var(--text3);margin-bottom:6px">Already have a license key?</div>
+      <div style="display:inline-flex;gap:8px">
+        <input type="text" id="licenseInput" placeholder="Paste your license key" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:260px;outline:none">
+        <button class="btn btn-secondary btn-sm" onclick="activateLicense()">Activate</button>
+      </div>
+      <div id="licenseMsg" style="font-size:12px;margin-top:6px"></div>
     </div>
   </div>
 
@@ -697,6 +843,9 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 
 <script>
 let sessionId = null;
+let proUrl = '';
+let entUrl = '';
+let currentTier = 'free';
 
 // Boot
 const statusEl = document.getElementById('status');
@@ -704,6 +853,12 @@ const startTime = Date.now();
 function checkReady() {
   fetch('/api/status').then(r => r.json()).then(d => {
     statusEl.textContent = '';
+    proUrl = d.pro_url || '';
+    entUrl = d.ent_url || '';
+    const usage = d.daily_usage || 0;
+    const badge = document.getElementById('usageBadge');
+    if (badge) badge.textContent = usage > 0 ? usage + ' of 3 free analyses used today' : '';
+    if (!proUrl) document.getElementById('proBuyBtn').style.display = 'none';
   }).catch(() => {
     const s = Math.round((Date.now() - startTime) / 1000);
     statusEl.textContent = 'Starting up... ' + s + 's';
@@ -790,8 +945,14 @@ async function doAnalyze() {
       document.getElementById('chatBox').style.display = 'block';
       btn.textContent = 'Re-Analyze';
     } else {
-      toast(data.error || 'Analysis failed');
-      btn.textContent = 'Retry';
+      if (data.upgrade) {
+        toast(data.error);
+        btn.textContent = 'Upgrade to Continue';
+        btn.onclick = () => openCheckout('pro');
+      } else {
+        toast(data.error || 'Analysis failed');
+        btn.textContent = 'Retry';
+      }
     }
   } catch(e) {
     toast('Error: ' + e.message);
@@ -845,6 +1006,43 @@ function downloadReport() {
   a.href = URL.createObjectURL(blob);
   a.download = 'PushBack_Report_' + new Date().toISOString().slice(0,10) + '.txt';
   a.click();
+}
+
+// Checkout & License
+function openCheckout(tier) {
+  const url = tier === 'pro' ? proUrl : entUrl;
+  if (url) {
+    window.open(url, '_blank');
+  } else {
+    toast('Checkout not configured yet. Contact us for access.');
+  }
+}
+
+async function activateLicense() {
+  const key = document.getElementById('licenseInput').value.trim();
+  const msg = document.getElementById('licenseMsg');
+  if (!key) { msg.textContent = 'Enter a license key'; msg.style.color = 'var(--red)'; return; }
+  if (!sessionId) { msg.textContent = 'Upload files first, then activate'; msg.style.color = 'var(--text3)'; return; }
+  try {
+    const r = await fetch('/api/activate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({session_id: sessionId, license_key: key})
+    });
+    const d = await r.json();
+    if (d.ok) {
+      currentTier = d.tier;
+      msg.innerHTML = 'Activated: <strong>' + esc(d.tier.toUpperCase()) + '</strong>';
+      msg.style.color = 'var(--green)';
+      toast('License activated — ' + d.tier + ' tier');
+    } else {
+      msg.textContent = d.error || 'Invalid key';
+      msg.style.color = 'var(--red)';
+    }
+  } catch(e) {
+    msg.textContent = 'Activation failed';
+    msg.style.color = 'var(--red)';
+  }
 }
 
 // Helpers
