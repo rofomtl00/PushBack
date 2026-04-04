@@ -298,6 +298,7 @@ VERTICALS = {
     "project_management": ("verticals.project_management", "Project management, PMO, portfolio governance, Agile/Scrum/SAFe, delivery methodology. Use when the CREATOR is setting up or evaluating PM practices, tools, or team delivery."),
     "design_creative": ("verticals.design_creative", "Design, charts, data visualization, web/UI design, PDF documents, presentations, branding. Use when the CREATOR is producing visual work — dashboards, websites, reports, pitch decks, or brand assets."),
     "finance_accounting": ("verticals.finance_accounting", "Accounting, tax, finance, budgets, financial statements, audits. Use when documents contain financial data, tax returns, budgets, forecasts, P&L statements, balance sheets, or personal/corporate tax planning."),
+    "cybersecurity": ("verticals.cybersecurity", "Cybersecurity, information security, compliance, risk assessment, incident response, penetration testing. Use when documents involve security architecture, vulnerability reports, compliance audits, or security product evaluation."),
 }
 
 def _ext_to_group(ext: str) -> str:
