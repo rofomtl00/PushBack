@@ -194,6 +194,7 @@ CHECK ALL OF THESE:
 - Chart/data visualization appropriateness (no 3D, no pie >5 slices, no truncated Y-axes)
 - Loading states, error states, and empty states
 - Hidden UI states: check EVERY tab, collapsed panel, accordion, modal, dropdown, and toggled section. Content hidden by default is where bugs hide. If a tab shows a table, what does it show when the table has 0 rows? If a panel collapses, does the toggle work? If a modal opens, is there a close button and does focus trap work?
+- Text content in panels: READ the actual text in every panel, tooltip, help section, empty state message, and guide/tutorial. Check for: typos, outdated instructions, placeholder text left in, wrong labels, misleading copy, version numbers that don't match, feature descriptions that reference removed features, and instructions that don't match current UI. Hidden panels are where stale copy lives longest.
 - Brand consistency across all touchpoints
 - Design system or token system
 - Touch targets (44x44px minimum for mobile)
