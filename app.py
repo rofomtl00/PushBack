@@ -159,10 +159,12 @@ _rate_limits = {}  # IP → {date, count}
 # ═══════════════════════════════════════════════
 # PRICING TIERS
 # ═══════════════════════════════════════════════
+# Pricing: $1.85/analysis cost. Caps are MONTHLY, not daily.
+# Free: 5/mo (acquisition). Pro: 20/mo ($29.99). Enterprise: 80/mo ($199).
 TIERS = {
-    "free":       {"analyses_per_day": 3,   "chat_per_analysis": 2},
-    "pro":        {"analyses_per_day": 15,  "chat_per_analysis": 10},
-    "enterprise": {"analyses_per_day": 200, "chat_per_analysis": 50},
+    "free":       {"analyses_per_month": 5,   "chat_per_analysis": 2},
+    "pro":        {"analyses_per_month": 20,  "chat_per_analysis": 10},
+    "enterprise": {"analyses_per_month": 80,  "chat_per_analysis": 50},
 }
 # License keys → tier mapping (validated via LemonSqueezy webhook or manual)
 _license_keys = {}  # key → {"tier": "pro"|"enterprise", "email": "...", "activated": "..."}
@@ -175,21 +177,19 @@ def _get_tier(sid: str) -> str:
     s = sessions.get(sid, {})
     return s.get("tier", "free")
 
-def _get_daily_usage(ip: str) -> int:
-    """Get analysis count for today for this IP."""
-    from datetime import date
-    today = str(date.today())
+def _get_monthly_usage(ip: str) -> int:
+    """Get analysis count for this month for this IP."""
+    month = datetime.now(timezone.utc).strftime("%Y-%m")
     rl = _rate_limits.get(ip, {})
-    if rl.get("date") != today:
+    if rl.get("month") != month:
         return 0
     return rl.get("count", 0)
 
 def _increment_usage(ip: str):
     """Track an analysis."""
-    from datetime import date
-    today = str(date.today())
-    if ip not in _rate_limits or _rate_limits[ip].get("date") != today:
-        _rate_limits[ip] = {"date": today, "count": 0}
+    month = datetime.now(timezone.utc).strftime("%Y-%m")
+    if ip not in _rate_limits or _rate_limits[ip].get("month") != month:
+        _rate_limits[ip] = {"month": month, "count": 0}
     _rate_limits[ip]["count"] += 1
 
 # ═══════════════════════════════════════════════
@@ -224,8 +224,8 @@ def _get_api_key():
     return os.environ.get("PUSHBACK_API_KEY", "")
 
 
-def _call_ai(system_prompt: str, user_message: str, history: list = None) -> str:
-    """Call the AI with a system prompt and user message. Handles Groq/Claude/OpenAI."""
+def _call_ai(system_prompt: str, user_message: str, history: list = None, tier: str = "free") -> str:
+    """Call the AI. Model selected by tier: free/pro use Haiku ($0.15/analysis), enterprise uses Sonnet ($1.50)."""
     key = _get_api_key()
     if not key:
         return "No API key configured. Set PUSHBACK_API_KEY in environment."
@@ -233,7 +233,7 @@ def _call_ai(system_prompt: str, user_message: str, history: list = None) -> str
     # Estimate token count (~4 chars per token)
     est_tokens = (len(system_prompt) + len(user_message) + sum(len(m.get("content", "")) for m in (history or []))) // 4
     if not _check_daily_cost(est_tokens):
-        return "Daily analysis limit reached. Service resets at midnight UTC. This protects against cost overruns."
+        return "Analysis limit reached. Service resets monthly. This protects against cost overruns."
     _track_cost(est_tokens)
 
     messages = []
@@ -253,8 +253,10 @@ def _call_ai(system_prompt: str, user_message: str, history: list = None) -> str
         elif key.startswith("sk-ant-"):
             import anthropic
             client = anthropic.Anthropic(api_key=key)
+            # Enterprise: Sonnet ($3/1M tokens). Free/Pro: Haiku ($0.25/1M = 12× cheaper)
+            ai_model = "claude-sonnet-4-20250514" if tier == "enterprise" else "claude-haiku-4-5-20251001"
             resp = client.messages.create(
-                model="claude-sonnet-4-20250514", max_tokens=4096,
+                model=ai_model, max_tokens=4096,
                 system=system_prompt, messages=messages)
             return resp.content[0].text
         else:
@@ -634,11 +636,11 @@ def analyze_docs():
     ip = request.remote_addr or "unknown"
     tier = _get_tier(sid)
     tier_limits = TIERS.get(tier, TIERS["free"])
-    daily_usage = _get_daily_usage(ip)
-    max_analyses = tier_limits["analyses_per_day"]
-    if daily_usage >= max_analyses:
+    monthly_usage = _get_monthly_usage(ip)
+    max_analyses = tier_limits["analyses_per_month"]
+    if monthly_usage >= max_analyses:
         if tier == "free":
-            return jsonify({"ok": False, "error": f"Free tier limit reached ({max_analyses}/day). Upgrade to Pro for 15 analyses/day.", "upgrade": True}), 429
+            return jsonify({"ok": False, "error": f"Free tier limit reached ({max_analyses}/month). Upgrade to Pro for 20 analyses/month.", "upgrade": True}), 429
         else:
             return jsonify({"ok": False, "error": f"Daily limit reached ({max_analyses} analyses). Resets at midnight UTC."}), 429
     _increment_usage(ip)
@@ -699,7 +701,7 @@ CONFIDENCE TAGGING — You MUST tag your data sources when citing benchmarks or 
 - If you are NOT confident in a specific number, say "approximately" or give a range instead of a false-precision single number.
 - NEVER fabricate a source name. If you don't know where a number comes from, say "industry estimates" not "McKinsey 2025 report" unless you're certain that report exists."""
 
-    result = _call_ai(system, prompt)
+    result = _call_ai(system, prompt, tier=tier)
     s["analysis"] = result
     s["chat_history"] = [
         {"role": "user", "content": prompt},
@@ -733,7 +735,8 @@ def chat():
     s["chat_history"].append({"role": "user", "content": message})
 
     system = "You are PushBack. Continue your analysis. Be specific. If the user defends a weak point, push harder with evidence. If they have a good answer, acknowledge it and move to the next issue."
-    result = _call_ai(system, message, history=s["chat_history"][:-1])
+    tier = _get_tier(sid)
+    result = _call_ai(system, message, history=s["chat_history"][:-1], tier=tier)
 
     s["chat_history"].append({"role": "assistant", "content": result})
     return jsonify({"ok": True, "response": result})
@@ -816,10 +819,10 @@ def analyze_url():
     # Rate limit
     ip = request.remote_addr or "unknown"
     tier = "free"
-    daily_usage = _get_daily_usage(ip)
+    monthly_usage = _get_monthly_usage(ip)
     tier_limits = TIERS.get(tier, TIERS["free"])
-    if daily_usage >= tier_limits["analyses_per_day"]:
-        return jsonify({"ok": False, "error": f"Free tier limit reached ({tier_limits['analyses_per_day']}/day).", "upgrade": True}), 429
+    if monthly_usage >= tier_limits["analyses_per_month"]:
+        return jsonify({"ok": False, "error": f"Free tier limit reached ({tier_limits['analyses_per_month']}/month).", "upgrade": True}), 429
     _increment_usage(ip)
 
     # Fetch URL content
@@ -893,11 +896,11 @@ def analyze_url():
 @app.route("/api/status")
 def status():
     ip = request.remote_addr or "unknown"
-    daily_usage = _get_daily_usage(ip)
+    monthly_usage = _get_monthly_usage(ip)
     return jsonify({
         "has_api_key": bool(_get_api_key()),
         "sessions": len(sessions),
-        "daily_usage": daily_usage,
+        "monthly_usage": monthly_usage,
         "pro_url": LEMON_SQUEEZY_PRO_URL,
         "ent_url": LEMON_SQUEEZY_ENT_URL,
     })
@@ -1110,19 +1113,19 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
       <div style="padding:24px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius)">
         <div style="font-size:13px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Free</div>
         <div style="font-size:28px;font-weight:700;color:var(--text)">$0</div>
-        <div style="font-size:13px;color:var(--text3);margin:8px 0 16px">3 analyses/day · 2 follow-ups each</div>
+        <div style="font-size:13px;color:var(--text3);margin:8px 0 16px">5 analyses/month · 2 follow-ups each</div>
         <div style="font-size:12px;color:var(--text3)">No signup required</div>
       </div>
       <div style="padding:24px;background:var(--accent-light);border:2px solid var(--accent);border-radius:var(--radius)">
         <div style="font-size:13px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Pro</div>
         <div style="font-size:28px;font-weight:700;color:var(--text)">$29.99<span style="font-size:14px;font-weight:400;color:var(--text3)">/mo</span></div>
-        <div style="font-size:13px;color:var(--text2);margin:8px 0 16px">15 analyses/day · 10 follow-ups each</div>
+        <div style="font-size:13px;color:var(--text2);margin:8px 0 16px">20 analyses/month · 10 follow-ups each</div>
         <button class="btn btn-primary btn-sm" onclick="openCheckout('pro')" id="proBuyBtn">Get Pro</button>
       </div>
       <div style="padding:24px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius)">
         <div style="font-size:13px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Enterprise</div>
         <div style="font-size:28px;font-weight:700;color:var(--text)">$199<span style="font-size:14px;font-weight:400;color:var(--text3)">/mo</span></div>
-        <div style="font-size:13px;color:var(--text2);margin:8px 0 16px">Unlimited analyses · 50 follow-ups each</div>
+        <div style="font-size:13px;color:var(--text2);margin:8px 0 16px">80 analyses/month · 50 follow-ups each</div>
         <button class="btn btn-secondary btn-sm" onclick="openCheckout('enterprise')">Get Enterprise</button>
       </div>
     </div>
@@ -1206,9 +1209,9 @@ function checkReady() {
     statusEl.textContent = '';
     proUrl = d.pro_url || '';
     entUrl = d.ent_url || '';
-    const usage = d.daily_usage || 0;
+    const usage = d.monthly_usage || 0;
     const badge = document.getElementById('usageBadge');
-    if (badge) badge.textContent = usage > 0 ? usage + ' of 3 free analyses used today' : '';
+    if (badge) badge.textContent = usage > 0 ? usage + ' of 5 free analyses used this month' : '';
     // URLs loaded — buttons always visible, openCheckout handles fallback
   }).catch(() => {
     const s = Math.round((Date.now() - startTime) / 1000);
