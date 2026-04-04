@@ -297,6 +297,7 @@ VERTICALS = {
     "corporate_insurance": ("verticals.corporate_insurance", "Corporate insurance — group benefits, D&O, cyber liability, commercial coverage, brokers. Use when the CREATOR is evaluating or pitching insurance products/coverage."),
     "project_management": ("verticals.project_management", "Project management, PMO, portfolio governance, Agile/Scrum/SAFe, delivery methodology. Use when the CREATOR is setting up or evaluating PM practices, tools, or team delivery."),
     "design_creative": ("verticals.design_creative", "Design, charts, data visualization, web/UI design, PDF documents, presentations, branding. Use when the CREATOR is producing visual work — dashboards, websites, reports, pitch decks, or brand assets."),
+    "finance_accounting": ("verticals.finance_accounting", "Accounting, tax, finance, budgets, financial statements, audits. Use when documents contain financial data, tax returns, budgets, forecasts, P&L statements, balance sheets, or personal/corporate tax planning."),
 }
 
 def _ext_to_group(ext: str) -> str:
