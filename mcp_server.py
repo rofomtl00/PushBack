@@ -25,12 +25,12 @@ PushBack gives you the feedback your team won't give you.
 Use these tools to analyze documents, URLs, or text with Big 4-level scrutiny.
 The analysis applies industry-specific checklists and adversarial questioning.
 
-IMPORTANT: Always check ALL relevant verticals, not just one. Most documents span
-multiple domains. For example, source code should be reviewed with the developer
-vertical AND any domain-specific verticals (quant_research for trading/math,
-finance_accounting for financial logic, cybersecurity for auth/secrets). Run
-analyze_with_vertical once per relevant vertical and combine the findings.
-Single-vertical analysis misses cross-domain bugs that matter most.
+IMPORTANT: Always check ALL relevant verticals in a single call using
+analyze_with_verticals(text, "developer,finance_accounting,quant_research").
+Pass a comma-separated list — the tool applies all checklists in one pass.
+For example, a trading bot should use "developer,quant_research,finance_accounting".
+Code with a UI should add "design_creative". Single-vertical analysis misses
+cross-domain bugs that matter most.
 """)
 
 # ── System prompt used for all analyses ──
@@ -147,22 +147,34 @@ async def analyze_text(text: str) -> str:
 
 
 @mcp.tool()
-async def analyze_with_vertical(text: str, vertical: str) -> str:
-    """Analyze text with a specific industry vertical applied.
-    Available verticals: developer, ecommerce_platform, vfx_film,
-    corporate_insurance, project_management, design_creative,
-    finance_accounting, cybersecurity, legal_contracts, hr_people
+async def analyze_with_verticals(text: str, verticals: str) -> str:
+    """Analyze text with one or more industry verticals applied in a single pass.
+    Pass a comma-separated list for multi-vertical analysis (recommended).
+    Available: developer, ecommerce_platform, vfx_film, corporate_insurance,
+    project_management, design_creative, finance_accounting, cybersecurity,
+    legal_contracts, hr_people, business_analyst, quant_research
 
     Args:
         text: The content to analyze
-        vertical: The industry vertical to apply
+        verticals: Comma-separated vertical IDs (e.g. "developer,finance_accounting,quant_research")
     """
-    v_context = get_vertical(vertical)
-    if not v_context:
-        available = ", ".join(VERTICALS.keys())
-        return f"Unknown vertical '{vertical}'. Available: {available}"
+    available = ", ".join(VERTICALS.keys())
+    vids = [v.strip() for v in verticals.split(",") if v.strip()]
+    v_context = ""
+    applied = []
+    for vid in vids:
+        vc = get_vertical(vid)
+        if vc:
+            v_context += vc
+            applied.append(vid)
+        else:
+            v_context += f"\n[Unknown vertical '{vid}'. Available: {available}]\n"
 
-    prompt = f"""Analyze this content using the {vertical} industry checklist.
+    if not applied:
+        return f"No valid verticals provided. Available: {available}"
+
+    prompt = f"""Analyze this content using ALL of the following industry checklists in a single pass: {', '.join(applied)}.
+Apply every checklist — do not skip any vertical's checks.
 
 {v_context}
 
@@ -179,7 +191,7 @@ async def list_verticals() -> str:
     for vid, data in VERTICALS.items():
         lines.append(f"- **{vid}**: {data['label']}")
     lines.append(f"\nTotal: {len(VERTICALS)} verticals")
-    lines.append("\nUse analyze_with_vertical(text, vertical_name) to apply a specific one.")
+    lines.append("\nUse analyze_with_verticals(text, 'vertical1,vertical2') to apply multiple in one call.")
     lines.append("Or use analyze_text(text) for auto-detection.")
     return "\n".join(lines)
 
