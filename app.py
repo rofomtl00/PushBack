@@ -1130,7 +1130,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 .header .status { font-size: 12px; color: var(--text3); }
 
 /* Main container */
-.main { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+.main { max-width: 680px; margin: 0 auto; padding: 40px 24px; }
 
 /* Upload state */
 .upload-area {
@@ -1366,7 +1366,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 
     <!-- Analysis + Chat side by side -->
     <div id="analysisBox" style="display:none">
-      <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start">
+      <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;max-width:1100px;margin:0 auto">
         <!-- Left: Analysis -->
         <div>
           <div class="analysis" id="analysisContent" style="max-height:80vh;overflow-y:auto"></div>
