@@ -407,7 +407,8 @@ def upload():
         total_size += size
         if total_size > MAX_TOTAL_SIZE:
             break
-        path = os.path.join(session_dir, f"{len(saved)}_{f.filename}")
+        safe_name = f.filename.replace("/", "_").replace("\\", "_").replace("..", "_")
+        path = os.path.join(session_dir, f"{len(saved)}_{safe_name}")
         f.save(path)
         saved.append(path)
 
@@ -1226,7 +1227,14 @@ def main():
     print(f"\n  PushBack — http://localhost:{port}\n")
     if port == 8080:
         threading.Timer(1.0, lambda: webbrowser.open(f"http://localhost:{port}")).start()
-    app.run(host="0.0.0.0", port=port, debug=False)
+    # Production WSGI server (waitress) — Flask dev server is not production-ready
+    try:
+        from waitress import serve
+        print("  Running on waitress (production)")
+        serve(app, host="0.0.0.0", port=port)
+    except ImportError:
+        print("  waitress not installed — falling back to Flask dev server")
+        app.run(host="0.0.0.0", port=port, debug=False)
 
 
 if __name__ == "__main__":
