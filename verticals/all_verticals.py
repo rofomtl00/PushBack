@@ -193,14 +193,15 @@ CHECK ALL OF THESE:
 - Information hierarchy (max 3 levels, F-pattern)
 - Chart/data visualization appropriateness (no 3D, no pie >5 slices, no truncated Y-axes)
 - Loading states, error states, and empty states
+- Hidden UI states: check EVERY tab, collapsed panel, accordion, modal, dropdown, and toggled section. Content hidden by default is where bugs hide. If a tab shows a table, what does it show when the table has 0 rows? If a panel collapses, does the toggle work? If a modal opens, is there a close button and does focus trap work?
 - Brand consistency across all touchpoints
 - Design system or token system
 - Touch targets (44x44px minimum for mobile)
 - Dark mode support
 - Internationalization (text expansion for translation)
-- Accessibility (screen reader, keyboard navigation, color-blind safe)
+- Accessibility (screen reader, keyboard navigation, color-blind safe, ARIA roles on tabs/toggles/modals)
 - Core Web Vitals (LCP <2.5s, CLS <0.1)
-- Animation performance and reduced-motion support
+- Animation performance and reduced-motion support (prefers-reduced-motion)
 - Handoff tooling between design and development""",
     },
 
