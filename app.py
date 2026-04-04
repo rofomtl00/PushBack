@@ -987,6 +987,88 @@ def status():
 # MCP ENDPOINT — serves tool list and descriptions for MCP clients
 # ═══════════════════════════════════════════════
 
+@app.route("/setup")
+def setup_page():
+    """Setup instructions for extension and MCP."""
+    return """<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PushBack Setup</title>
+<style>
+body{font-family:-apple-system,sans-serif;max-width:700px;margin:40px auto;padding:0 20px;color:#111;line-height:1.7}
+h1{color:#2563eb}h2{margin-top:32px;color:#111}
+pre{background:#f3f4f6;padding:16px;border-radius:8px;overflow-x:auto;font-size:13px;border:1px solid #e5e7eb}
+.step{background:#eff6ff;border:1px solid #2563eb;border-radius:8px;padding:16px;margin:12px 0}
+.step strong{color:#2563eb}
+a{color:#2563eb}
+code{background:#f3f4f6;padding:2px 6px;border-radius:4px;font-size:13px}
+</style></head><body>
+<h1>PushBack Setup</h1>
+<p>Get AI-powered strategic analysis in your workflow. Three ways to use PushBack:</p>
+
+<h2>1. Web App (easiest)</h2>
+<div class="step"><strong>Just go to <a href="/">pushback-befd.onrender.com</a></strong> — upload files or paste a URL. No setup needed.</div>
+
+<h2>2. Chrome Extension</h2>
+<div class="step">
+<strong>Step 1:</strong> Install from <a href="#">Chrome Web Store</a> (pending review)<br>
+<strong>Step 2:</strong> Click the PushBack icon on any page<br>
+<strong>Step 3:</strong> Choose: analyze this page, paste a URL, or upload files<br>
+<strong>Optional:</strong> Go to Settings tab → add your own API key for unlimited analyses
+</div>
+
+<h2>3. Claude Desktop / Claude Code (MCP)</h2>
+<p>Connect PushBack directly to Claude. Every conversation gets access to 12 industry analysis tools.</p>
+<div class="step">
+<strong>Step 1:</strong> Open your Claude Desktop config file:<br>
+<code>Mac: ~/Library/Application Support/Claude/claude_desktop_config.json</code><br>
+<code>Windows: %APPDATA%/Claude/claude_desktop_config.json</code><br><br>
+<strong>Step 2:</strong> Add this inside the file:
+<pre>{
+  "mcpServers": {
+    "pushback": {
+      "type": "sse",
+      "url": "https://pushback-mcp.onrender.com/sse"
+    }
+  }
+}</pre>
+<strong>Step 3:</strong> Restart Claude Desktop<br>
+<strong>Step 4:</strong> Ask Claude: "Use the pushback tool to analyze [URL or text]"
+</div>
+
+<h2>4. Claude Project (no install needed)</h2>
+<p>Turn any Claude Pro conversation into PushBack. No extension, no config files.</p>
+<div class="step">
+<strong>Step 1:</strong> Go to <a href="https://claude.ai">claude.ai</a> → Projects → New Project<br>
+<strong>Step 2:</strong> Name it "PushBack"<br>
+<strong>Step 3:</strong> In the project instructions, paste this:
+<pre>You are PushBack — a strategic analysis tool. Your job is to FIND PROBLEMS.
+
+For every document or text the user shares:
+1. Look at it AS A WHOLE — how do pieces fit together? Flag contradictions.
+2. Challenge EVERY number against industry benchmarks.
+3. Ask what's CAUSING or COULD CAUSE financial loss.
+4. Compare everything to INDUSTRY STANDARDS and alternatives.
+5. List what you DID NOT check and whether it matters.
+6. After analysis, ask: what would a 20-year veteran check that you missed?
+
+Structure your response:
+- What I'm Reviewing (confirm understanding)
+- What's Strong
+- What's Weak (specific, with fixes)
+- What's Missing
+- Hard Questions (the other side will ask...)
+- How the Other Side Will Attack This
+- Downside Scenario (key assumption wrong by 50%)
+- What You Might Not Have Considered (emerging trends with data)</pre>
+<strong>Step 4:</strong> Every chat in this Project now gets PushBack analysis. Upload any file and ask "analyze this."
+</div>
+
+<h2>Pricing</h2>
+<p>Free: 2 analyses/month · Pro $9.99: 30/month · Enterprise $49.99: 100/month<br>
+<strong>Bring your own Claude/OpenAI/Groq API key = unlimited free analyses</strong></p>
+
+<p style="margin-top:32px;color:#9ca3af;font-size:13px">PushBack · AI-powered second opinion · <a href="/">Back to app</a></p>
+</body></html>""", 200, {"Content-Type": "text/html"}
+
+
 @app.route("/mcp/tools")
 def mcp_tools():
     """Return PushBack's MCP tool definitions for clients that discover via HTTP."""
