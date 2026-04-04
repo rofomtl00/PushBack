@@ -159,12 +159,12 @@ _rate_limits = {}  # IP → {date, count}
 # ═══════════════════════════════════════════════
 # PRICING TIERS
 # ═══════════════════════════════════════════════
-# Pricing: $1.85/analysis cost. Caps are MONTHLY, not daily.
-# Free: 5/mo (acquisition). Pro: 20/mo ($29.99). Enterprise: 80/mo ($199).
+# Pricing: Sonnet ~$1.50/analysis, Haiku ~$0.15/analysis
+# Free uses Haiku (good enough to demo value). Pro+Enterprise use Sonnet (full quality).
 TIERS = {
-    "free":       {"analyses_per_month": 5,   "chat_per_analysis": 2},
-    "pro":        {"analyses_per_month": 20,  "chat_per_analysis": 10},
-    "enterprise": {"analyses_per_month": 80,  "chat_per_analysis": 50},
+    "free":       {"analyses_per_month": 3,   "chat_per_analysis": 2,  "model": "haiku"},
+    "pro":        {"analyses_per_month": 15,  "chat_per_analysis": 10, "model": "sonnet"},
+    "enterprise": {"analyses_per_month": 60,  "chat_per_analysis": 50, "model": "sonnet"},
 }
 # License keys → tier mapping (validated via LemonSqueezy webhook or manual)
 _license_keys = {}  # key → {"tier": "pro"|"enterprise", "email": "...", "activated": "..."}
@@ -253,8 +253,8 @@ def _call_ai(system_prompt: str, user_message: str, history: list = None, tier: 
         elif key.startswith("sk-ant-"):
             import anthropic
             client = anthropic.Anthropic(api_key=key)
-            # Enterprise: Sonnet ($3/1M tokens). Free/Pro: Haiku ($0.25/1M = 12× cheaper)
-            ai_model = "claude-sonnet-4-20250514" if tier == "enterprise" else "claude-haiku-4-5-20251001"
+            # Free: Haiku ($0.25/1M = fast, good enough to demo). Pro+Enterprise: Sonnet ($3/1M = full depth)
+            ai_model = "claude-haiku-4-5-20251001" if tier == "free" else "claude-sonnet-4-20250514"
             resp = client.messages.create(
                 model=ai_model, max_tokens=4096,
                 system=system_prompt, messages=messages)
@@ -640,7 +640,7 @@ def analyze_docs():
     max_analyses = tier_limits["analyses_per_month"]
     if monthly_usage >= max_analyses:
         if tier == "free":
-            return jsonify({"ok": False, "error": f"Free tier limit reached ({max_analyses}/month). Upgrade to Pro for 20 analyses/month.", "upgrade": True}), 429
+            return jsonify({"ok": False, "error": f"Free tier limit reached ({max_analyses}/month). Upgrade to Pro for deeper analysis + 15/month.", "upgrade": True}), 429
         else:
             return jsonify({"ok": False, "error": f"Daily limit reached ({max_analyses} analyses). Resets at midnight UTC."}), 429
     _increment_usage(ip)
@@ -1113,19 +1113,19 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
       <div style="padding:24px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius)">
         <div style="font-size:13px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Free</div>
         <div style="font-size:28px;font-weight:700;color:var(--text)">$0</div>
-        <div style="font-size:13px;color:var(--text3);margin:8px 0 16px">5 analyses/month · 2 follow-ups each</div>
-        <div style="font-size:12px;color:var(--text3)">No signup required</div>
+        <div style="font-size:13px;color:var(--text3);margin:8px 0 16px">3 analyses/month · Basic AI model</div>
+        <div style="font-size:12px;color:var(--text3)">Try before you buy — faster model, less depth</div>
       </div>
       <div style="padding:24px;background:var(--accent-light);border:2px solid var(--accent);border-radius:var(--radius)">
         <div style="font-size:13px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Pro</div>
-        <div style="font-size:28px;font-weight:700;color:var(--text)">$29.99<span style="font-size:14px;font-weight:400;color:var(--text3)">/mo</span></div>
-        <div style="font-size:13px;color:var(--text2);margin:8px 0 16px">20 analyses/month · 10 follow-ups each</div>
+        <div style="font-size:28px;font-weight:700;color:var(--text)">$49.99<span style="font-size:14px;font-weight:400;color:var(--text3)">/mo</span></div>
+        <div style="font-size:13px;color:var(--text2);margin:8px 0 16px">15 analyses/month · Full-depth AI · 10 follow-ups</div>
         <button class="btn btn-primary btn-sm" onclick="openCheckout('pro')" id="proBuyBtn">Get Pro</button>
       </div>
       <div style="padding:24px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius)">
         <div style="font-size:13px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Enterprise</div>
-        <div style="font-size:28px;font-weight:700;color:var(--text)">$199<span style="font-size:14px;font-weight:400;color:var(--text3)">/mo</span></div>
-        <div style="font-size:13px;color:var(--text2);margin:8px 0 16px">80 analyses/month · 50 follow-ups each</div>
+        <div style="font-size:28px;font-weight:700;color:var(--text)">$249<span style="font-size:14px;font-weight:400;color:var(--text3)">/mo</span></div>
+        <div style="font-size:13px;color:var(--text2);margin:8px 0 16px">60 analyses/month · Full-depth AI · 50 follow-ups</div>
         <button class="btn btn-secondary btn-sm" onclick="openCheckout('enterprise')">Get Enterprise</button>
       </div>
     </div>
@@ -1162,8 +1162,12 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
         <!-- Left: Analysis -->
         <div>
           <div class="analysis" id="analysisContent" style="max-height:80vh;overflow-y:auto"></div>
-          <div style="margin-top:12px; padding:10px 14px; background:var(--bg2); border:1px solid var(--border); border-radius:8px; font-size:11px; color:var(--text3); line-height:1.5;">
+          <div id="disclaimerBox" style="margin-top:12px; padding:10px 14px; background:var(--bg2); border:1px solid var(--border); border-radius:8px; font-size:11px; color:var(--text3); line-height:1.5;">
             AI-powered analysis — not financial, legal, or professional advice. Verify critical numbers independently.
+          </div>
+          <div id="upsellBox" style="display:none;margin-top:8px;padding:10px 14px;background:var(--accent-light);border:1px solid var(--accent);border-radius:8px;font-size:12px;color:var(--accent);line-height:1.5">
+            This analysis used our basic AI model. <strong>Upgrade to Pro ($49.99/mo)</strong> for deeper insights — the same model used by enterprise clients, with more detailed benchmarks, stronger cross-document checking, and sharper competitive analysis.
+            <button class="btn btn-primary btn-sm" style="margin-left:8px" onclick="openCheckout('pro')">Upgrade</button>
           </div>
           <div class="actions" style="margin-top:10px">
             <button class="btn btn-secondary btn-sm" onclick="downloadReport()">Download Report</button>
@@ -1211,7 +1215,7 @@ function checkReady() {
     entUrl = d.ent_url || '';
     const usage = d.monthly_usage || 0;
     const badge = document.getElementById('usageBadge');
-    if (badge) badge.textContent = usage > 0 ? usage + ' of 5 free analyses used this month' : '';
+    if (badge) badge.textContent = usage > 0 ? usage + ' of 3 free analyses used this month' : '';
     // URLs loaded — buttons always visible, openCheckout handles fallback
   }).catch(() => {
     const s = Math.round((Date.now() - startTime) / 1000);
@@ -1299,6 +1303,8 @@ async function doAnalyze() {
       document.getElementById('chatBox').style.display = 'block';
       btn.textContent = 'Re-Analyze';
       document.getElementById('analysisBox').scrollIntoView({behavior: 'smooth', block: 'start'});
+      // Show upsell for free tier
+      document.getElementById('upsellBox').style.display = currentTier === 'free' ? 'block' : 'none';
     } else {
       if (data.upgrade) {
         toast(data.error);
