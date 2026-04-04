@@ -407,38 +407,50 @@ Files:
 Content preview:
 {preview}
 
-Available verticals (pick AT MOST one, or "none"):
+Available verticals (pick up to TWO if the project spans multiple domains, or "none"):
 {vertical_options}
 
 {file_type_hint}
 
 Respond in EXACTLY this format, nothing else:
 LABEL: <short label for the user, 2-3 words>
-VERTICAL: <vertical_id or none>"""
+VERTICAL: <vertical_id or none>
+VERTICAL2: <second vertical_id or none>"""
 
     try:
         result = _call_ai("You are a document classifier. Respond only in the exact format requested. No explanation.", classify_prompt)
         label = "Business Analysis"
-        vertical_id = "none"
+        vertical_ids = []
         for line in result.strip().split("\n"):
             line = line.strip()
             if line.upper().startswith("LABEL:"):
                 label = line.split(":", 1)[1].strip()
-            elif line.upper().startswith("VERTICAL:"):
-                vertical_id = line.split(":", 1)[1].strip().lower()
+            elif line.upper().startswith("VERTICAL"):
+                vid = line.split(":", 1)[1].strip().lower()
+                if vid and vid != "none" and vid in VERTICALS:
+                    vertical_ids.append(vid)
         doc_type = {"type": label.lower().replace(" ", "_"), "label": label}
     except Exception:
         doc_type = {"type": "business", "label": "Business Analysis"}
-        vertical_id = "none"
+        vertical_ids = []
 
-    # Load vertical context if one was selected
+    # Auto-detect: code files with HTML/CSS → also load design vertical
+    if any(v == "developer" for v in vertical_ids):
+        has_html = any("<html" in (f.get("text", "")[:5000]).lower() or
+                       "css" in (f.get("text", "")[:5000]).lower() or
+                       f.get("type") in (".html", ".css")
+                       for f in files)
+        if has_html and "design_creative" not in vertical_ids:
+            vertical_ids.append("design_creative")
+
+    # Load all matched vertical contexts
     vertical_context = ""
-    if vertical_id and vertical_id != "none" and vertical_id in VERTICALS:
+    for vertical_id in vertical_ids:
         try:
             module_path = VERTICALS[vertical_id][0]
             import importlib
             mod = importlib.import_module(module_path)
-            vertical_context = mod.VERTICAL_CONTEXT
+            vertical_context += "\n\n" + mod.VERTICAL_CONTEXT
         except Exception:
             pass
 
