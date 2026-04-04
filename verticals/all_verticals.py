@@ -1,104 +1,102 @@
 """
 all_verticals.py — Lightweight Industry Checklists for PushBack
 ================================================================
-Each vertical is a checklist, not an encyclopedia. The AI fills in
-facts from its own training data. This saves 80% of context tokens
-and stays fresher than hardcoded benchmarks.
-
-~200-400 chars per vertical vs 10-19K before.
+Each vertical is a checklist of what to CHECK, what RED FLAGS to catch,
+how the OTHER SIDE will ATTACK, and what BENCHMARKS to compare against.
+The AI fills in all facts from its own knowledge — no hardcoded data.
 """
 
 VERTICALS = {
     "developer": {
         "label": "Software Development",
-        "checklist": """Evaluate as an experienced CTO hiring a dev team:
-CHECK: test coverage %, deployment frequency (DORA metrics), code review process, CI/CD pipeline, API documentation, containerization, observability stack, security scanning (SAST/DAST), dependency management
-DEPLOYMENT CHECK: verify environment variables are read correctly (PORT, API keys), check if the app reads the hosting platform's env vars (Render sets PORT, Heroku sets PORT, AWS uses different patterns). Check start commands match the actual entry point. Check if all dependencies are in requirements.txt/package.json. Verify the app works on the target platform — not just locally.
-INTEGRATION CHECK: if the project exposes APIs, verify endpoint URLs are documented, CORS is configured, authentication works for external clients. For MCP/plugin/extension architectures, verify the discovery endpoint is accessible and returns correct tool definitions.
-RED FLAGS: no automated testing, manual deployments, bus factor of 1, no staging environment, no incident response plan, AI-generated code without review process, hardcoded ports/paths that break on hosting platforms, missing dependencies in requirements file, console errors in any web UI
-ATTACK: "Show me your test coverage report — the actual report, not the number." "What happens when your lead developer leaves?" "How much of your code is AI-generated and what's your review process?" "Open the browser console — any errors kill credibility instantly."
-BENCHMARKS: compare against DORA elite metrics, OWASP Top 10 2025, industry salary ranges, SOC 2 readiness, cloud hosting costs""",
+        "checklist": """FIRST: Is this the right technical approach? Could it be simpler? Is the team building what already exists?
+CHECK: test coverage %, deployment frequency (DORA metrics), code review process, CI/CD pipeline, API documentation, containerization, observability stack (logging+metrics+tracing — not just console.log), security scanning (SAST/DAST), dependency management (Dependabot/Renovate), error monitoring (Sentry/Datadog), database migration strategy, API versioning, rate limiting, secrets management (vault, not env files), load testing results
+DEPLOYMENT: verify env vars read correctly (PORT, API keys), start commands match entry point, all deps in requirements.txt, app works on target platform not just locally, no hardcoded ports/paths
+INTEGRATION: API endpoints documented, CORS configured, auth works for external clients, MCP/plugin/extension discovery accessible
+RED FLAGS: no automated testing, manual deployments, bus factor of 1, no staging environment, no incident response plan, AI-generated code without review, hardcoded ports, missing deps, console errors in web UI, no error monitoring in production
+ATTACK: "Show me your test coverage report." "Open browser console — any errors?" "What's your rollback procedure?" "How do you handle a dependency with a critical CVE tomorrow?"
+BENCHMARKS: DORA elite metrics, OWASP Top 10, SOC 2 readiness, cloud costs, industry salaries""",
     },
 
     "ecommerce_platform": {
         "label": "Ecommerce / Retail Platform",
-        "checklist": """Evaluate as a VP of Digital at a major retailer:
-CHECK: BOPIS capability, real-time inventory sync, POS integration, unified customer profile, SEO migration plan, Core Web Vitals (LCP <2.5s), mobile checkout flow, payment processor integration, accessibility (WCAG 2.1 AA)
-RED FLAGS: no SOC 2, no BOPIS, no POS integration, pricing tied to GMV, no data migration plan, no uptime SLA with penalties, claiming to compete with Shopify on features
-ATTACK: "How does this integrate with our existing POS?" "What happens with 50x traffic on Black Friday — show the load test." "What's the total cost over 3 years including everything?" "Do you have SOC 2 Type 2?"
-BENCHMARKS: compare TCO against Shopify Plus ($150K/3yr), SFCC ($1-3M/3yr). Check implementation timeline, NRR, enterprise ACV, gross margin, churn rate. Reference Canadian Tire, BMW, Patrick Morin as enterprise examples.""",
+        "checklist": """FIRST: Is a custom platform justified or should they use Shopify/BigCommerce? What's the TCO difference?
+CHECK: BOPIS capability, real-time inventory sync, POS integration, unified customer profile, SEO migration plan, Core Web Vitals (LCP <2.5s), mobile checkout flow, payment processors, accessibility (WCAG 2.1 AA), returns/refund flow, shipping integration, tax calculation (Avalara/TaxJar), inventory accuracy %, abandoned cart recovery, multi-currency, fraud detection
+RED FLAGS: no SOC 2, no BOPIS, no POS integration, pricing tied to GMV, no data migration plan, no uptime SLA, no returns flow, no tax automation
+ATTACK: "How does this integrate with our existing POS?" "What happens on Black Friday — show load test." "Total cost over 3 years?" "What's the returns flow?"
+BENCHMARKS: TCO vs Shopify Plus ($150K/3yr), SFCC ($1-3M/3yr), implementation timeline, NRR, churn. Reference major retailers as examples.""",
     },
 
     "vfx_film": {
         "label": "VFX / Film Production",
-        "checklist": """Evaluate as a studio VFX supervisor reviewing a vendor bid:
-CHECK: TPN certification, per-shot pricing breakdown, revision cap in contract, artist retention rate, pipeline documentation, tax credit strategy by jurisdiction, delivery milestone schedule, insurance coverage
-RED FLAGS: no TPN, unlimited revisions, underbidding to win then change-ordering, no jurisdiction strategy for tax credits, VP/supervisor used for junior work, post-production underbudgeted
-ATTACK: "Compare per-shot rates against 3-5 other vendors." "What's your artist retention over 12 months?" "Show pipeline documentation — not tribal knowledge." "Model what happens if you miss a milestone by 2 weeks."
-BENCHMARKS: per-shot costs ($1K indie to $100K+ hero), tax credits by jurisdiction (UK 29.25%, Canada 33-37%, Australia 40%), cost per shooting day, DP/PA day rates. Reference Warner Bros, Amazon, Netflix, Disney procurement.""",
+        "checklist": """FIRST: Is the bid realistic or underbidding to win? Does the scope match the budget?
+CHECK: TPN certification, per-shot pricing breakdown, revision cap, artist retention rate, pipeline documentation, tax credit strategy, delivery milestones, insurance, color pipeline (ACES/OCIO), render farm costs, data security for unreleased content, NDA compliance, shot tracking software (ShotGrid/ftrack), delivery format specs (IMF/DCP)
+RED FLAGS: no TPN, unlimited revisions, underbidding, no jurisdiction strategy for tax credits, post underbudgeted, no color pipeline spec, tribal knowledge pipeline
+ATTACK: "Compare rates against 3-5 vendors." "Artist retention over 12 months?" "What if you miss a milestone by 2 weeks?" "What's your data security for unreleased content?"
+BENCHMARKS: per-shot costs by tier, tax credits by jurisdiction, shooting day rates. Reference major studio procurement.""",
     },
 
     "corporate_insurance": {
         "label": "Corporate Insurance",
-        "checklist": """Evaluate as an enterprise CFO reviewing insurance coverage:
-CHECK: D&O coverage vs peer benchmarks, cyber liability limits and exclusions, group benefits competitiveness (mental health $3K+), business interruption post-COVID exclusions, key person coverage, broker's proactive risk management
-RED FLAGS: cheapest premium with worst exclusions, no broker involved, D&O with cyber exclusion, cyber insurance but no MFA, no business interruption review, insurance spend below 0.3% of revenue
-ATTACK: "Walk me through exactly what's covered in a ransomware attack." "Are our D&O policies covering cyber-related claims?" "How does our group benefits compare to competitors for talent retention?" "What security controls do our cyber insurers require — are we actually compliant?"
-BENCHMARKS: Canadian commercial insurance market ($18.45B), D&O premiums, cyber liability rates, group benefits spend ($3,500-6,000/employee/year). Reference OSFI, PIPEDA, IFRS 17.""",
+        "checklist": """FIRST: Is the coverage appropriate for the actual risk profile? Over-insured or under-insured?
+CHECK: D&O coverage vs peers, cyber liability limits and exclusions, group benefits competitiveness, business interruption post-COVID, key person coverage, broker proactive management, claims processing SLA, policy renewal automation, actuarial data quality, reinsurance structure, regulatory filing deadlines, customer complaint ratio
+RED FLAGS: cheapest premium worst exclusions, no broker, D&O with cyber exclusion, cyber but no MFA, no BI review, spend below 0.3% of revenue, claims SLA undefined
+ATTACK: "Walk me through a ransomware claim." "D&O covering cyber claims?" "Group benefits vs competitors?" "What controls do insurers require — are we compliant?"
+BENCHMARKS: market size, D&O premiums, cyber rates, group benefits spend per employee. Reference OSFI, PIPEDA, IFRS 17.""",
     },
 
     "project_management": {
         "label": "Project Management / PMO",
-        "checklist": """Evaluate as a VP of Delivery reviewing a project plan:
-CHECK: on-time/on-budget track record, resource utilization vs capacity, scope change control process, risk register with quantified risks (EMV), earned value metrics (CPI/SPI), stakeholder engagement cadence, lessons learned process
-RED FLAGS: no project charter, PM is also the developer, 100% utilization targets, no contingency budget (15-25% standard), Gantt chart with no dependencies, no definition of done, "on track" until suddenly "failed"
-ATTACK: "Show me your historical on-time delivery rate across last 10 projects." "Compare timeline against reference class data for similar projects." "If your critical path slips 3 weeks, what's the cascade?" "Show me lessons learned from your last 3 delayed projects."
-BENCHMARKS: only 35% of projects succeed (Standish CHAOS 2025), average 27% over budget, 55% over schedule. Compare against PMO maturity levels 1-5. SAFe transformation costs $500K-2M.""",
+        "checklist": """FIRST: Is a formal PM framework needed or is it overhead? Does the methodology match the project type?
+CHECK: on-time/on-budget track record, resource utilization vs capacity, scope change control, risk register (quantified EMV), earned value (CPI/SPI), stakeholder cadence, lessons learned, RACI matrix, dependency mapping across teams, change request backlog size, velocity trend, technical debt allocation %
+RED FLAGS: no project charter, PM is the developer, 100% utilization, no contingency (15-25%), Gantt with no dependencies, no definition of done, watermelon reporting
+ATTACK: "Historical on-time rate across 10 projects?" "Reference class data for similar projects?" "Critical path slips 3 weeks — what cascades?" "Lessons learned from last 3 delays?"
+BENCHMARKS: 35% project success rate (Standish CHAOS), 27% avg over budget, PMO maturity levels, SAFe costs.""",
     },
 
     "design_creative": {
         "label": "Design / UX / Visual Communication",
-        "checklist": """Evaluate as a design director reviewing visual work:
-CHECK: typography scale consistency (16-18px body minimum), color contrast (WCAG AA 4.5:1), responsive design (test at 320px), information hierarchy (F-pattern, max 3 levels), chart type appropriateness (no 3D, no pie >5 slices), loading/error/empty states, brand consistency across touchpoints
-RED FLAGS: body text below 14px, 3D charts, truncated Y-axes, no mobile responsive design, inconsistent button styles, no accessibility compliance, stock photos everywhere, no design system
-ATTACK: "I'll open your site on my phone right now." "Run Lighthouse audit — project your scores." "Zoom to 200% — does it hold?" "Show me the empty state, loading state, and error state." "What's your typography scale and why these sizes?"
-BENCHMARKS: Core Web Vitals (LCP <2.5s, FID <100ms, CLS <0.1), touch targets 44x44px minimum, max 2 typefaces, 5-6 color palette. Reference Apple HIG, Material Design, Nielsen Norman Group.""",
+        "checklist": """FIRST: Is the design solving the right problem? Are users involved in the design process or is it designer-driven?
+CHECK: typography scale (16-18px body min), contrast (WCAG AA 4.5:1), responsive (test 320px), hierarchy (max 3 levels), chart types (no 3D, no pie >5), loading/error/empty states, brand consistency, design token system, handoff tooling, animation performance budget, icon consistency, dark mode, internationalization (text expansion 25% for French)
+RED FLAGS: text below 14px, 3D charts, truncated Y-axes, no responsive, inconsistent buttons, no accessibility, stock photos everywhere, no design system, no dark mode in 2026
+ATTACK: "Open on my phone right now." "Lighthouse audit — project scores." "Zoom 200% — does it hold?" "Empty state, loading state, error state?" "What does this look like in French?"
+BENCHMARKS: Core Web Vitals, 44px touch targets, max 2 typefaces, 5-6 color palette. Reference Apple HIG, Material Design, NNG.""",
     },
 
     "finance_accounting": {
         "label": "Finance / Accounting / Tax",
-        "checklist": """Evaluate as a CFO or tax advisor reviewing financial documents:
-CHECK: revenue recognition policy (IFRS 15/ASC 606), cash flow vs net income alignment, AR vs revenue growth rate, debt-to-equity ratio, effective tax rate vs statutory, budget sensitivity analysis (base/upside/downside/worst), RRSP/TFSA/FHSA optimization, transfer pricing documentation
-RED FLAGS: positive net income but negative operating cash flow, AR growing faster than revenue, EBITDA with 5+ adjustments, no contingency in budget, budget with no downside scenario, crypto without proper reporting, intercompany pricing without TP study
-ATTACK: "Recalculate margins from raw data — do they match your claimed percentages?" "Trace top 5 revenue items to contracts and invoices." "Calculate effective tax rate — if 8% on 26.5% statutory, audit every deduction." "Bank statements vs balance sheet — do they match?"
-BENCHMARKS: current ratio >1.5, DSO <35 days, operating margin >15%, ROE >15%. Canadian tax brackets, RRSP limits, TFSA limits, SR&ED credits. CRA and IRS audit triggers.""",
+        "checklist": """FIRST: Are the financial assumptions realistic or hockey-stick fantasy? Does the model survive a 30% revenue drop?
+CHECK: revenue recognition (IFRS 15/ASC 606), cash flow vs net income, AR vs revenue growth, debt-to-equity, effective tax rate vs statutory, budget sensitivity (4 scenarios), RRSP/TFSA/FHSA optimization, transfer pricing docs, intercompany elimination, currency hedging, lease accounting (IFRS 16), working capital, AP aging, cash forecast accuracy
+RED FLAGS: positive income negative cash flow, AR growing faster than revenue, EBITDA 5+ adjustments, no budget contingency, no downside scenario, crypto unreported, no TP study
+ATTACK: "Recalculate margins from raw data." "Trace top 5 revenue items to invoices." "Effective tax rate vs statutory — explain every gap." "Bank statements vs balance sheet — match?"
+BENCHMARKS: current ratio >1.5, DSO <35, operating margin >15%, ROE >15%. Tax brackets, RRSP limits, SR&ED credits, CRA/IRS audit triggers.""",
     },
 
     "cybersecurity": {
         "label": "Cybersecurity / Information Security",
-        "checklist": """Evaluate as a CISO or security auditor:
-CHECK: MFA coverage (100% for admin), patch management timeline (critical <24hr), incident response plan (tested in last 12 months), vulnerability scan frequency, endpoint detection (EDR not just AV), network segmentation, backup testing schedule, security awareness training completion, privileged access management, cloud security posture
-RED FLAGS: no MFA on admin accounts, no IR plan, antivirus only no EDR, no security training, secrets in code repos, no network segmentation, annual scans only, untested backups, same password across systems, no logging/monitoring
-ATTACK: "Scan external attack surface in 5 minutes with Shodan." "Check employee credentials in breach databases." "Send phishing simulation to 3 executives." "Request last backup restoration test evidence." "Check SSL/TLS grade on SSL Labs."
-BENCHMARKS: avg breach cost $4.88M, 194 days to detect, NIST CSF 2.0 maturity levels, CIS Controls v8, SOC 2 Type 2 cost $20-50K. Reference OWASP Top 10 2025, MITRE ATT&CK, Verizon DBIR.""",
+        "checklist": """FIRST: Is the security spend proportional to the actual risk? Over-invested in perimeter while ignoring identity?
+CHECK: MFA (100% admin), patch timeline (critical <24hr), IR plan (tested <12mo), vuln scan frequency, EDR not just AV, segmentation, backup testing, security training, PAM, cloud posture, supply chain security (SBOM), API security testing, data classification, DLP rules, insider threat program, security metrics dashboard, red team frequency
+RED FLAGS: no MFA admin, no IR plan, AV only, no training, secrets in repos, no segmentation, annual scans, untested backups, no logging, no SBOM
+ATTACK: "Shodan scan in 5 minutes." "Credentials in breach databases?" "Phishing sim to 3 execs." "Last backup restore test?" "SSL Labs grade?" "Show me your SBOM."
+BENCHMARKS: $4.88M avg breach, 194 days to detect, NIST CSF 2.0, CIS Controls v8, SOC 2 cost, OWASP Top 10, MITRE ATT&CK, Verizon DBIR.""",
     },
 
     "legal_contracts": {
         "label": "Legal / Contracts",
-        "checklist": """Evaluate as opposing counsel reviewing a contract or legal document:
-CHECK: indemnification symmetry, limitation of liability cap, IP ownership clarity, termination clauses (for cause vs convenience), auto-renewal terms, governing law and jurisdiction, force majeure scope, non-compete enforceability, change order process, SLA penalties, data protection obligations, insurance requirements
-RED FLAGS: unlimited liability, one-sided indemnification, vague deliverables without acceptance criteria, no termination for convenience, auto-renewal without notice period, IP assignment without carve-outs, non-compete with no geographic/time limit, no change order process, missing governing law
-ATTACK: "I'll find every clause that's one-sided and demand reciprocity." "Test non-compete enforceability in this jurisdiction." "Calculate total liability exposure under worst-case scenario." "Check if force majeure covers the specific risks you face." "Verify IP ownership chain for every asset."
-BENCHMARKS: lawyer rates by tier ($200-500/hr mid-market, $500-1500/hr BigLaw), contract review costs, M&A due diligence scope, IP registration costs. Canada: reasonable notice, PIPEDA. US: at-will, CCPA. Reference GPL contamination risks for software.""",
+        "checklist": """FIRST: Is legal review proportional to the deal size? $10K contract doesn't need $50K of legal. Is a template sufficient?
+CHECK: indemnification symmetry, liability cap, IP ownership, termination (cause vs convenience), auto-renewal, governing law, force majeure, non-compete enforceability, change orders, SLA penalties, data protection, insurance requirements, contract lifecycle management tool, clause library, regulatory change monitoring, litigation hold procedures, data retention, export controls
+RED FLAGS: unlimited liability, one-sided indemnification, vague deliverables, no termination for convenience, auto-renewal no notice, IP grab without carve-outs, unenforceable non-compete, no change order process, no governing law
+ATTACK: "Find every one-sided clause and demand reciprocity." "Non-compete enforceable here?" "Total liability worst case?" "Force majeure cover this risk?" "IP chain verified?"
+BENCHMARKS: lawyer rates ($200-500 mid, $500-1500 BigLaw), review costs, M&A scope, IP registration. Canada: reasonable notice, PIPEDA. US: at-will, CCPA. GPL contamination.""",
     },
 
     "hr_people": {
         "label": "HR / People / Talent",
-        "checklist": """Evaluate as a CHRO or employment lawyer reviewing HR practices:
-CHECK: voluntary turnover rate vs industry, time-to-fill critical roles, offer acceptance rate, pay equity analysis, employee engagement scores (trending), performance review process, employee classification (W-2 vs 1099 / employee vs contractor), severance and termination procedures, remote work policy and cross-border compliance, DEI metrics
-RED FLAGS: no salary bands published, time-to-fill >60 days, no exit interview data, turnover >20% without explanation, no PIP documentation, no pay equity audit, employee/contractor misclassification, no remote work policy, hollow DEI without metrics
-ATTACK: "Pull promotion velocity by demographic — any gaps are a lawsuit." "Test contractor classification against IRS 20-factor test / CRA guidelines." "Calculate what reasonable notice would cost for every employee over 5 years tenure." "Check if remote workers in other provinces/states create tax nexus."
-BENCHMARKS: cost-per-hire ($4,700 avg), recruiter fees 15-25% of salary, HR-to-employee ratio 1:100, training spend $1,300/employee/year, voluntary turnover by industry. Canada: ESA reasonable notice, constructive dismissal. US: FLSA, ADA, FMLA, at-will.""",
+        "checklist": """FIRST: Is the HR issue a people problem or a process problem? Hiring more people won't fix bad processes.
+CHECK: voluntary turnover vs industry, time-to-fill, offer acceptance, pay equity, engagement scores (trend), performance reviews, employee classification (W-2/1099), severance procedures, remote/cross-border compliance, DEI metrics, succession planning, skills gap analysis, employer brand (Glassdoor), onboarding completion rate, internal mobility rate, workplace safety (OSHA/WSIB)
+RED FLAGS: no salary bands, time-to-fill >60 days, no exit data, turnover >20% unexplained, no PIP docs, no pay equity audit, misclassification, no remote policy, hollow DEI, no succession plan
+ATTACK: "Promotion velocity by demographic — gaps = lawsuit." "Contractor classification vs IRS 20-factor test." "Reasonable notice cost for all 5yr+ employees." "Remote workers creating tax nexus?"
+BENCHMARKS: cost-per-hire $4,700, recruiter fees 15-25%, HR ratio 1:100, training $1,300/yr, turnover by industry. Canada: ESA, constructive dismissal. US: FLSA, ADA, FMLA.""",
     },
 }
 
@@ -108,7 +106,7 @@ def get_vertical(vid):
     v = VERTICALS.get(vid)
     if not v:
         return ""
-    return f"\n## Industry Expertise: {v['label']}\n\nBefore checking details, ask: IS THIS THE RIGHT APPROACH? Could this problem be solved simpler, cheaper, or with existing tools? Flag over-engineering, redundant complexity, and building what already exists.\n\nCRITICAL: Think about the ACTUAL END USER — not developers, not technical people. If the product requires users to download files, use a terminal, edit config files, or understand technical concepts to get value, that's a UX failure. Every interaction should work for someone who only knows how to click buttons and paste URLs. If a non-technical executive can't use it in 30 seconds, it's not ready.\n\nThen apply this checklist — use YOUR knowledge for specific facts, benchmarks, and current data. Cite year and source when you know them.\n\n{v['checklist']}\n"
+    return f"\n## Industry Expertise: {v['label']}\n\nBefore checking details, ask: IS THIS THE RIGHT APPROACH? Could this problem be solved simpler, cheaper, or with existing tools? Flag over-engineering, redundant complexity, and building what already exists.\n\nCRITICAL: Think about the ACTUAL END USER — not developers, not technical people. If the product requires users to download files, use a terminal, edit config files, or understand technical concepts to get value, that's a UX failure. Every interaction should work for someone who only knows how to click buttons and paste URLs. If a non-technical person can't use it in 30 seconds, it's not ready.\n\nThen apply this checklist — use YOUR knowledge for specific facts, benchmarks, and current data. Cite year and source when you know them.\n\n{v['checklist']}\n"
 
 
 def get_all_vertical_ids():
