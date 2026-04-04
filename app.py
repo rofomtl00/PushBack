@@ -164,7 +164,7 @@ _rate_limits = {}  # IP → {date, count}
 # Pricing reality: Claude/ChatGPT = $20/mo unlimited. PushBack is an ENHANCEMENT, not replacement.
 # BYOK users already pay for AI — we charge for the framework only.
 TIERS = {
-    "free":       {"analyses_per_month": 2,   "chat_per_analysis": 2,  "model": "haiku",  "byok_analyses": 999},
+    "free":       {"analyses_per_month": 2,   "chat_per_analysis": 2,  "model": "haiku",  "byok_analyses": 15},
     "pro":        {"analyses_per_month": 30,  "chat_per_analysis": 15, "model": "sonnet", "byok_analyses": 999},
     "enterprise": {"analyses_per_month": 100, "chat_per_analysis": 50, "model": "sonnet", "byok_analyses": 999},
 }
