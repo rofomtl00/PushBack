@@ -407,10 +407,10 @@ def upload():
         total_size += size
         if total_size > MAX_TOTAL_SIZE:
             break
-        safe_name = f.filename.replace("/", "_").replace("\\", "_").replace("..", "_")
-        path = os.path.join(session_dir, f"{len(saved)}_{safe_name}")
-        f.save(path)
-        saved.append(path)
+        ext = os.path.splitext(f.filename)[1].lower()[:10]
+        safe_path = os.path.join(session_dir, f"{uuid.uuid4().hex[:8]}{ext}")
+        f.save(safe_path)
+        saved.append((safe_path, f.filename))
 
     skipped = []
     if len(files) > len(saved):
@@ -419,7 +419,12 @@ def upload():
     if not saved:
         return jsonify({"ok": False, "error": "No files received. Files may exceed the 50MB per-file or 200MB total limit."}), 400
 
-    parsed = parse_folder(saved)
+    # Parse files — pass original names for display, UUID paths for disk safety
+    parsed = parse_folder([p for p, _ in saved])
+    # Restore original filenames for display (parser used UUID names on disk)
+    orig_names = {os.path.basename(p): orig for p, orig in saved}
+    for f in parsed["files"]:
+        f["filename"] = orig_names.get(f["filename"], f["filename"])
 
     # Check for parse errors and build user-friendly messages
     parse_errors = []
