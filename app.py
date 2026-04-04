@@ -1072,8 +1072,8 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
     <!-- Chat -->
     <div id="chatBox" style="display:none">
       <div style="font-size: 13px; color: var(--text3); margin: 20px 0 8px;">Ask follow-up questions or defend your position:</div>
-      <div id="chatMessages"></div>
-      <div class="chat-input">
+      <div id="chatMessages" style="max-height:300px;overflow-y:auto"></div>
+      <div class="chat-input" style="position:sticky;bottom:0;background:var(--bg);padding:8px 0;z-index:10">
         <input type="text" id="chatInput" placeholder="Type your response..." onkeydown="if(event.key==='Enter')doChat()">
         <button class="btn btn-primary btn-sm" onclick="doChat()">Send</button>
       </div>
