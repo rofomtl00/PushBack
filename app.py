@@ -712,6 +712,7 @@ CRITICAL — Before flagging something as "missing," search the codebase for it 
 - Before saying "no cost controls": search for DAILY_COST, _check_daily_cost, MAX_TOKENS, _track_cost
 - Before saying "no security": search for sanitize, uuid, SSRF, blocked, safe_name
 - Check for STALE CODE: references to removed features (old function names, dead imports, comments about deleted modules, strategy names that don't exist in the registry). If the README says "7 strategies" but the guide text says "8 strategies", flag the inconsistency. Stale references to removed code indicate poor cleanup discipline.
+- Check for RUNTIME ERRORS: if the project has HTML with embedded JavaScript, check for: undefined variables, orphaned object properties from incomplete deletions, mismatched braces/brackets, broken template literals, and references to removed functions. A JS syntax error kills the ENTIRE page — every button, every feature, everything stops working. This is the #1 priority check for any web UI.
 - If you find the implementation exists, acknowledge it works rather than flagging it as missing. Only critique if the implementation is insufficient, not absent.
 
 Your standards:
