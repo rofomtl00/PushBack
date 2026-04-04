@@ -803,6 +803,93 @@ def ls_webhook():
     return "OK", 200
 
 
+@app.route("/api/url", methods=["POST"])
+def analyze_url():
+    """Fetch a URL and analyze it like uploaded files."""
+    body = request.get_json() or {}
+    url = body.get("url", "").strip()
+    if not url:
+        return jsonify({"ok": False, "error": "No URL provided"}), 400
+    if not url.startswith("http"):
+        url = "https://" + url
+
+    # Rate limit
+    ip = request.remote_addr or "unknown"
+    tier = "free"
+    daily_usage = _get_daily_usage(ip)
+    tier_limits = TIERS.get(tier, TIERS["free"])
+    if daily_usage >= tier_limits["analyses_per_day"]:
+        return jsonify({"ok": False, "error": f"Free tier limit reached ({tier_limits['analyses_per_day']}/day).", "upgrade": True}), 429
+    _increment_usage(ip)
+
+    # Fetch URL content
+    try:
+        import urllib.request
+        req = urllib.request.Request(url, headers={"User-Agent": "PushBack/1.0 (analysis tool)"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            raw = resp.read(500_000).decode("utf-8", errors="ignore")  # 500KB max
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"Could not fetch URL: {e}"}), 400
+
+    # Strip HTML tags for text content, preserve structure
+    import re
+    # Extract title
+    title_match = re.search(r"<title[^>]*>(.*?)</title>", raw, re.IGNORECASE | re.DOTALL)
+    title = title_match.group(1).strip() if title_match else url
+    # Extract meta description
+    desc_match = re.search(r'<meta[^>]*name=["\']description["\'][^>]*content=["\'](.*?)["\']', raw, re.IGNORECASE)
+    description = desc_match.group(1) if desc_match else ""
+    # Strip scripts and styles
+    clean = re.sub(r"<script[^>]*>.*?</script>", "", raw, flags=re.DOTALL | re.IGNORECASE)
+    clean = re.sub(r"<style[^>]*>.*?</style>", "", clean, flags=re.DOTALL | re.IGNORECASE)
+    # Convert common HTML to readable text
+    clean = re.sub(r"<br\s*/?>", "\n", clean)
+    clean = re.sub(r"</(p|div|h[1-6]|li|tr)>", "\n", clean)
+    clean = re.sub(r"<[^>]+>", " ", clean)
+    clean = re.sub(r"\s+", " ", clean).strip()
+    # Limit
+    if len(clean) > 100_000:
+        clean = clean[:100_000] + "\n[Content truncated]"
+
+    context = f"=== Website: {title} ===\nURL: {url}\nDescription: {description}\n\n{clean}"
+
+    # Create session
+    sid = str(uuid.uuid4())[:8]
+    files = [{"filename": title or url, "type": ".html", "size_kb": round(len(clean) / 1024, 1),
+              "text": clean, "tables": [], "metadata": {"url": url, "title": title}, "error": None}]
+
+    doc_type, vertical_context = _classify_and_load_vertical(files, context)
+
+    if len(sessions) >= MAX_SESSIONS:
+        oldest = sorted(sessions.keys())[:len(sessions) - MAX_SESSIONS + 1]
+        for old_sid in oldest:
+            try:
+                _extract_learnings(sessions[old_sid])
+            except Exception:
+                pass
+            del sessions[old_sid]
+
+    sessions[sid] = {
+        "files": files,
+        "context": context,
+        "claims_map": "",
+        "vertical_context": vertical_context,
+        "questions": [],
+        "analysis": None,
+        "chat_history": [],
+        "doc_type": doc_type,
+    }
+
+    return jsonify({
+        "ok": True,
+        "session_id": sid,
+        "doc_type": doc_type["label"],
+        "title": title,
+        "chars": len(clean),
+        "files": [{"name": title, "type": ".html", "size_kb": round(len(clean) / 1024, 1), "error": None}],
+    })
+
+
 @app.route("/api/status")
 def status():
     ip = request.remote_addr or "unknown"
@@ -1002,10 +1089,17 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
     <div class="upload-area">
       <h2>Get the feedback your team won't give you.</h2>
       <p>Upload your pitch deck, business plan, code, budget, or proposal. PushBack applies the same scrutiny that a Big 4 evaluator, competing consultant, or due diligence team would — and shows you where you're exposed.</p>
-      <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">Select Files</button>
+      <div style="display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">Select Files</button>
+        <span style="color:var(--text3);font-size:13px">or</span>
+        <div style="display:flex;gap:6px">
+          <input type="text" id="urlInput" placeholder="Paste a URL to analyze" style="padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px;width:280px;outline:none">
+          <button class="btn btn-secondary" onclick="analyzeUrl()">Analyze URL</button>
+        </div>
+      </div>
       <input type="file" id="fileInput" multiple style="display:none">
-      <div class="hint">
-        PDF · Word · Excel · PowerPoint · CSV · Images · Code<br>
+      <div class="hint" style="margin-top:16px">
+        PDF · Word · Excel · PowerPoint · CSV · Images · Code · URLs<br>
         Files are parsed and immediately deleted. Nothing is stored.
       </div>
       <div id="usageBadge" style="margin-top:16px;font-size:13px;color:var(--text3)"></div>
@@ -1267,6 +1361,38 @@ function downloadReport() {
 }
 
 // Checkout & License
+// URL analysis
+async function analyzeUrl() {
+  const url = document.getElementById('urlInput').value.trim();
+  if (!url) { toast('Enter a URL to analyze'); return; }
+  show('loadingState');
+  document.getElementById('loadingText').textContent = 'Fetching ' + url + '...';
+  try {
+    const r = await fetch('/api/url', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({url: url})
+    });
+    const data = await r.json();
+    if (!data.ok) {
+      show('uploadState');
+      toast(data.error || 'URL fetch failed');
+      return;
+    }
+    sessionId = data.session_id;
+    document.getElementById('docType').textContent = data.doc_type;
+    let h = '';
+    for (const f of data.files) {
+      h += '<div class="file-item"><span class="name">' + esc(f.name) + '</span><span class="meta">' + f.size_kb + ' KB</span><span class="badge badge-ok">Ready</span></div>';
+    }
+    document.getElementById('fileList').innerHTML = h;
+    show('readyState');
+  } catch(e) {
+    show('uploadState');
+    toast('URL analysis failed: ' + e.message);
+  }
+}
+
 function openCheckout(tier) {
   let url = tier === 'pro' ? proUrl : entUrl;
   if (!url) {
