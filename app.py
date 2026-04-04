@@ -1148,51 +1148,57 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
       <div id="usageBadge" style="margin-top:16px;font-size:13px;color:var(--text3)"></div>
     </div>
 
-    <!-- BYOK: Bring Your Own Key -->
-    <div style="margin-top:24px;text-align:center">
-      <div id="byokToggle" style="cursor:pointer;font-size:13px;color:var(--accent)" onclick="document.getElementById('byokPanel').style.display=document.getElementById('byokPanel').style.display==='none'?'block':'none'">
-        Have your own AI API key? Use it for unlimited analyses
-      </div>
-      <div id="byokPanel" style="display:none;margin-top:8px">
-        <div style="display:inline-flex;gap:6px;align-items:center">
-          <input type="password" id="byokInput" placeholder="sk-ant-... or gsk_... or sk-..." style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:300px;outline:none">
-          <button class="btn btn-secondary btn-sm" onclick="saveByok()">Save Key</button>
-        </div>
-        <div id="byokStatus" style="font-size:12px;margin-top:6px;color:var(--text3)"></div>
-        <div style="font-size:11px;color:var(--text3);margin-top:4px">Your key is stored in your browser only. We never see or store it server-side.</div>
-      </div>
-    </div>
-
     <!-- Pricing -->
-    <div style="margin-top:40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;text-align:center">
-      <div style="padding:24px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius)">
-        <div style="font-size:13px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Free</div>
-        <div style="font-size:28px;font-weight:700;color:var(--text)">$0</div>
-        <div style="font-size:13px;color:var(--text3);margin:8px 0 16px">3 analyses/month · Basic AI model</div>
-        <div style="font-size:12px;color:var(--text3)">Try before you buy — faster model, less depth</div>
+    <div style="margin-top:48px">
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:18px;font-weight:700;color:var(--text)">Plans</div>
+        <div style="font-size:14px;color:var(--text3);margin-top:4px">Or bring your own API key for unlimited analyses at any tier</div>
       </div>
-      <div style="padding:24px;background:var(--accent-light);border:2px solid var(--accent);border-radius:var(--radius)">
-        <div style="font-size:13px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Pro</div>
-        <div style="font-size:28px;font-weight:700;color:var(--text)">$49.99<span style="font-size:14px;font-weight:400;color:var(--text3)">/mo</span></div>
-        <div style="font-size:13px;color:var(--text2);margin:8px 0 16px">15 analyses/month · Full-depth AI · 10 follow-ups</div>
-        <button class="btn btn-primary btn-sm" onclick="openCheckout('pro')" id="proBuyBtn">Get Pro</button>
-      </div>
-      <div style="padding:24px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius)">
-        <div style="font-size:13px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Enterprise</div>
-        <div style="font-size:28px;font-weight:700;color:var(--text)">$249<span style="font-size:14px;font-weight:400;color:var(--text3)">/mo</span></div>
-        <div style="font-size:13px;color:var(--text2);margin:8px 0 16px">60 analyses/month · Full-depth AI · 50 follow-ups</div>
-        <button class="btn btn-secondary btn-sm" onclick="openCheckout('enterprise')">Get Enterprise</button>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;text-align:center">
+        <div style="padding:28px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:12px">
+          <div style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Free</div>
+          <div style="font-size:32px;font-weight:700;color:var(--text)">$0</div>
+          <div style="font-size:13px;color:var(--text3);margin:8px 0 4px">3 analyses / month</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Basic AI · 2 follow-ups</div>
+          <div style="font-size:11px;color:var(--text3);padding-top:12px;border-top:1px solid var(--border)">No signup required</div>
+        </div>
+        <div style="padding:28px 20px;background:var(--accent-light);border:2px solid var(--accent);border-radius:12px;position:relative">
+          <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:10px;padding:2px 10px;border-radius:10px;font-weight:600">POPULAR</div>
+          <div style="font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Pro</div>
+          <div style="font-size:32px;font-weight:700;color:var(--text)">$49.99<span style="font-size:14px;font-weight:400;color:var(--text3)">/mo</span></div>
+          <div style="font-size:13px;color:var(--text2);margin:8px 0 4px">15 analyses / month</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Full-depth AI · 10 follow-ups</div>
+          <button class="btn btn-primary btn-sm" onclick="openCheckout('pro')" id="proBuyBtn" style="width:100%">Get Pro</button>
+        </div>
+        <div style="padding:28px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:12px">
+          <div style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Enterprise</div>
+          <div style="font-size:32px;font-weight:700;color:var(--text)">$249<span style="font-size:14px;font-weight:400;color:var(--text3)">/mo</span></div>
+          <div style="font-size:13px;color:var(--text2);margin:8px 0 4px">60 analyses / month</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Full-depth AI · 50 follow-ups</div>
+          <button class="btn btn-primary btn-sm" onclick="openCheckout('enterprise')" style="width:100%;background:#111827">Get Enterprise</button>
+        </div>
       </div>
     </div>
 
-    <!-- License key activation -->
-    <div style="margin-top:16px;text-align:center">
-      <div style="font-size:13px;color:var(--text3);margin-bottom:6px">Already have a license key?</div>
-      <div style="display:inline-flex;gap:8px">
-        <input type="text" id="licenseInput" placeholder="Paste your license key" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:260px;outline:none">
-        <button class="btn btn-secondary btn-sm" onclick="activateLicense()">Activate</button>
+    <!-- Account: License + BYOK in one clean section -->
+    <div style="margin-top:32px;padding:20px;background:var(--bg2);border:1px solid var(--border);border-radius:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <!-- License key -->
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">Activate License</div>
+          <input type="text" id="licenseInput" placeholder="Paste your license key" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:100%;outline:none;margin-bottom:6px">
+          <button class="btn btn-secondary btn-sm" onclick="activateLicense()" style="width:100%">Activate</button>
+          <div id="licenseMsg" style="font-size:11px;margin-top:4px;min-height:16px"></div>
+        </div>
+        <!-- BYOK -->
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">Your Own API Key <span style="font-size:11px;color:var(--green);font-weight:500">Unlimited</span></div>
+          <input type="password" id="byokInput" placeholder="sk-ant-... or gsk_... or sk-..." style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:100%;outline:none;margin-bottom:6px">
+          <button class="btn btn-secondary btn-sm" onclick="saveByok()" style="width:100%">Save Key</button>
+          <div id="byokStatus" style="font-size:11px;margin-top:4px;min-height:16px"></div>
+        </div>
       </div>
-      <div id="licenseMsg" style="font-size:12px;margin-top:6px"></div>
+      <div id="byokToggle" style="font-size:11px;color:var(--text3);margin-top:8px;text-align:center">Keys stored in your browser only. Never sent to our servers.</div>
     </div>
   </div>
 
@@ -1445,7 +1451,7 @@ function getByok() { const e = localStorage.getItem('pushback_user_key'); return
 
 // Check on load
 if (localStorage.getItem('pushback_user_key')) {
-  document.getElementById('byokToggle').innerHTML = 'Using your own API key <span style="color:var(--green)">Active</span> <span style="cursor:pointer;color:var(--red);font-size:11px" onclick="localStorage.removeItem(\'pushback_user_key\');location.reload()">(remove)</span>';
+  document.getElementById('byokStatus').innerHTML = '<span style="color:var(--green)">Key active</span> · <span style="cursor:pointer;color:var(--red)" onclick="localStorage.removeItem(\'pushback_user_key\');location.reload()">Remove</span>';
 }
 
 async function analyzeUrl() {
