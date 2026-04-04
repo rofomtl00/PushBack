@@ -1,127 +1,98 @@
 """
-all_verticals.py — Lightweight Industry Checklists for PushBack
-================================================================
-Each vertical is a checklist of what to CHECK, what RED FLAGS to catch,
-how the OTHER SIDE will ATTACK, and what BENCHMARKS to compare against.
-The AI fills in all facts from its own knowledge — no hardcoded data.
+all_verticals.py — Industry Context for PushBack
+==================================================
+Each vertical is a ROLE + KEY QUESTION + ATTACK ANGLE.
+The AI uses its own expert knowledge for everything else.
+No hardcoded tools, numbers, benchmarks, or checklists.
 """
 
 VERTICALS = {
     "developer": {
         "label": "Software Development",
-        "checklist": """FIRST: Is this the right technical approach? Could it be simpler? Is the team building what already exists?
-CHECK: test coverage %, deployment frequency (DORA metrics), code review process, CI/CD pipeline, API documentation, containerization, observability stack (logging+metrics+tracing — not just console.log), security scanning (SAST/DAST), dependency management (Dependabot/Renovate), error monitoring (Sentry/Datadog), database migration strategy, API versioning, rate limiting, secrets management (vault, not env files), load testing results
-DEPLOYMENT: verify env vars read correctly (PORT, API keys), start commands match entry point, all deps in requirements.txt, app works on target platform not just locally, no hardcoded ports/paths
-COST MODEL: if the app calls paid APIs (AI models, cloud services), verify cost per request using CURRENT pricing from the provider's pricing page. Check: are costs calculated with actual token counts or estimates? A 10x error in cost assumptions kills the business.
-INTEGRATION: API endpoints documented, CORS configured, auth works for external clients, MCP/plugin/extension discovery accessible
-RED FLAGS: no automated testing, manual deployments, bus factor of 1, no staging environment, no incident response plan, AI-generated code without review, hardcoded ports, missing deps, console errors in web UI, no error monitoring in production
-ATTACK: "Show me your test coverage report." "Open browser console — any errors?" "What's your rollback procedure?" "How do you handle a dependency with a critical CVE tomorrow?"
-BENCHMARKS: DORA elite metrics, OWASP Top 10, SOC 2 readiness, cloud costs, industry salaries""",
+        "context": """You are an experienced CTO evaluating a dev team or codebase.
+KEY QUESTION: Is this the right architecture, or is the team over-engineering what could be simpler?
+ATTACK AS: the technical evaluator who opens the browser console, checks the CI/CD pipeline, and asks "what happens when your lead developer quits tomorrow?"
+ALSO CHECK: deployment readiness on the target platform, not just local. Console errors kill all credibility instantly.""",
     },
 
     "ecommerce_platform": {
         "label": "Ecommerce / Retail Platform",
-        "checklist": """FIRST: Is a custom platform justified or should they use Shopify/BigCommerce? What's the TCO difference?
-CHECK: BOPIS capability, real-time inventory sync, POS integration, unified customer profile, SEO migration plan, Core Web Vitals (LCP <2.5s), mobile checkout flow, payment processors, accessibility (WCAG 2.1 AA), returns/refund flow, shipping integration, tax calculation (Avalara/TaxJar), inventory accuracy %, abandoned cart recovery, multi-currency, fraud detection
-RED FLAGS: no SOC 2, no BOPIS, no POS integration, pricing tied to GMV, no data migration plan, no uptime SLA, no returns flow, no tax automation
-ATTACK: "How does this integrate with our existing POS?" "What happens on Black Friday — show load test." "Total cost over 3 years?" "What's the returns flow?"
-BENCHMARKS: TCO vs Shopify Plus ($150K/3yr), SFCC ($1-3M/3yr), implementation timeline, NRR, churn. Reference major retailers as examples.""",
+        "context": """You are a VP of Digital at a major retailer evaluating a platform vendor.
+KEY QUESTION: Why not just use Shopify? What justifies the custom build or this specific vendor?
+ATTACK AS: the procurement team that demands SOC 2, load test results, POS integration proof, and a 3-year TCO comparison before the first demo.""",
     },
 
     "vfx_film": {
         "label": "VFX / Film Production",
-        "checklist": """FIRST: Is the bid realistic or underbidding to win? Does the scope match the budget?
-CHECK: TPN certification, per-shot pricing breakdown, revision cap, artist retention rate, pipeline documentation, tax credit strategy, delivery milestones, insurance, color pipeline (ACES/OCIO), render farm costs, data security for unreleased content, NDA compliance, shot tracking software (ShotGrid/ftrack), delivery format specs (IMF/DCP)
-RED FLAGS: no TPN, unlimited revisions, underbidding, no jurisdiction strategy for tax credits, post underbudgeted, no color pipeline spec, tribal knowledge pipeline
-ATTACK: "Compare rates against 3-5 vendors." "Artist retention over 12 months?" "What if you miss a milestone by 2 weeks?" "What's your data security for unreleased content?"
-BENCHMARKS: per-shot costs by tier, tax credits by jurisdiction, shooting day rates. Reference major studio procurement.""",
+        "context": """You are a studio VFX supervisor evaluating a vendor bid.
+KEY QUESTION: Is this bid realistic, or are they underbidding to win and will change-order later?
+ATTACK AS: the line producer who compares per-shot rates against 5 other vendors and checks TPN certification before reading the rest of the proposal.""",
     },
 
     "corporate_insurance": {
         "label": "Corporate Insurance",
-        "checklist": """FIRST: Is the coverage appropriate for the actual risk profile? Over-insured or under-insured?
-CHECK: D&O coverage vs peers, cyber liability limits and exclusions, group benefits competitiveness, business interruption post-COVID, key person coverage, broker proactive management, claims processing SLA, policy renewal automation, actuarial data quality, reinsurance structure, regulatory filing deadlines, customer complaint ratio
-RED FLAGS: cheapest premium worst exclusions, no broker, D&O with cyber exclusion, cyber but no MFA, no BI review, spend below 0.3% of revenue, claims SLA undefined
-ATTACK: "Walk me through a ransomware claim." "D&O covering cyber claims?" "Group benefits vs competitors?" "What controls do insurers require — are we compliant?"
-BENCHMARKS: market size, D&O premiums, cyber rates, group benefits spend per employee. Reference OSFI, PIPEDA, IFRS 17.""",
+        "context": """You are an enterprise CFO reviewing insurance coverage with your broker.
+KEY QUESTION: Are we actually covered for the risks that would hurt us most, or just the cheapest policy?
+ATTACK AS: the claims adjuster who finds the exclusion that voids coverage exactly when you need it — cyber attack, business interruption, key person loss.""",
     },
 
     "project_management": {
         "label": "Project Management / PMO",
-        "checklist": """FIRST: Is a formal PM framework needed or is it overhead? Does the methodology match the project type?
-CHECK: on-time/on-budget track record, resource utilization vs capacity, scope change control, risk register (quantified EMV), earned value (CPI/SPI), stakeholder cadence, lessons learned, RACI matrix, dependency mapping across teams, change request backlog size, velocity trend, technical debt allocation %
-RED FLAGS: no project charter, PM is the developer, 100% utilization, no contingency (15-25%), Gantt with no dependencies, no definition of done, watermelon reporting
-ATTACK: "Historical on-time rate across 10 projects?" "Reference class data for similar projects?" "Critical path slips 3 weeks — what cascades?" "Lessons learned from last 3 delays?"
-BENCHMARKS: 35% project success rate (Standish CHAOS), 27% avg over budget, PMO maturity levels, SAFe costs.""",
+        "context": """You are a VP of Delivery inheriting a troubled project portfolio.
+KEY QUESTION: Is this project plan based on evidence or optimism? What's the historical on-time delivery rate?
+ATTACK AS: the Big 4 advisor who asks for reference class data, earned value metrics, and evidence that the contingency budget was calculated, not guessed.""",
     },
 
     "design_creative": {
         "label": "Design / UX / Visual Communication",
-        "checklist": """FIRST: Is the design solving the right problem? Are users involved in the design process or is it designer-driven?
-CHECK: typography scale (16-18px body min), contrast (WCAG AA 4.5:1), responsive (test 320px), hierarchy (max 3 levels), chart types (no 3D, no pie >5), loading/error/empty states, brand consistency, design token system, handoff tooling, animation performance budget, icon consistency, dark mode, internationalization (text expansion 25% for French)
-RED FLAGS: text below 14px, 3D charts, truncated Y-axes, no responsive, inconsistent buttons, no accessibility, stock photos everywhere, no design system, no dark mode in 2026
-ATTACK: "Open on my phone right now." "Lighthouse audit — project scores." "Zoom 200% — does it hold?" "Empty state, loading state, error state?" "What does this look like in French?"
-BENCHMARKS: Core Web Vitals, 44px touch targets, max 2 typefaces, 5-6 color palette. Reference Apple HIG, Material Design, NNG.""",
+        "context": """You are a design director reviewing work before it goes to a client.
+KEY QUESTION: Does this design actually work for the people who will use it, or just look good in a presentation?
+ATTACK AS: the evaluator who opens it on their phone during the meeting, zooms to 200%, runs Lighthouse, and asks "show me the empty state and the error state."
+ALSO CHECK: every chart for misleading visualization (truncated axes, 3D effects, pie charts with too many slices).""",
     },
 
     "finance_accounting": {
         "label": "Finance / Accounting / Tax",
-        "checklist": """FIRST: Are the financial assumptions realistic or hockey-stick fantasy? Does the model survive a 30% revenue drop?
-CHECK: revenue recognition (IFRS 15/ASC 606), cash flow vs net income, AR vs revenue growth, debt-to-equity, effective tax rate vs statutory, budget sensitivity (4 scenarios), RRSP/TFSA/FHSA optimization, transfer pricing docs, intercompany elimination, currency hedging, lease accounting (IFRS 16), working capital, AP aging, cash forecast accuracy
-UNIT ECONOMICS: if the product uses API calls (AI, cloud services, payment processors), calculate ACTUAL cost per transaction using current API pricing — not estimates. Verify: input tokens × price/1M + output tokens × price/1M = real cost. Compare to revenue per user. If cost assumptions are off by 10x, the entire business model is wrong.
-RED FLAGS: positive income negative cash flow, AR growing faster than revenue, EBITDA 5+ adjustments, no budget contingency, no downside scenario, crypto unreported, no TP study, API cost estimates not verified against actual pricing pages, margin calculations using stale cost data
-ATTACK: "Recalculate margins from raw data." "Trace top 5 revenue items to invoices." "Effective tax rate vs statutory — explain every gap." "Bank statements vs balance sheet — match?" "Show me the actual API pricing page — does your cost model use current rates?"
-BENCHMARKS: current ratio >1.5, DSO <35, operating margin >15%, ROE >15%. Tax brackets, RRSP limits, SR&ED credits, CRA/IRS audit triggers.""",
+        "context": """You are a CFO or external auditor reviewing financial documents.
+KEY QUESTION: Do the numbers tell the real story, or is this financial theater? Does cash flow match reported profit?
+ATTACK AS: the auditor who recalculates every margin from raw data, traces revenue to invoices, and compares the effective tax rate to statutory — demanding explanation for every gap.
+ALSO CHECK: if the business uses paid APIs or services, verify actual unit costs against current provider pricing pages. A 10x cost assumption error kills the business model.""",
     },
 
     "cybersecurity": {
         "label": "Cybersecurity / Information Security",
-        "checklist": """FIRST: Is the security spend proportional to the actual risk? Over-invested in perimeter while ignoring identity?
-CHECK: MFA (100% admin), patch timeline (critical <24hr), IR plan (tested <12mo), vuln scan frequency, EDR not just AV, segmentation, backup testing, security training, PAM, cloud posture, supply chain security (SBOM), API security testing, data classification, DLP rules, insider threat program, security metrics dashboard, red team frequency
-RED FLAGS: no MFA admin, no IR plan, AV only, no training, secrets in repos, no segmentation, annual scans, untested backups, no logging, no SBOM
-ATTACK: "Shodan scan in 5 minutes." "Credentials in breach databases?" "Phishing sim to 3 execs." "Last backup restore test?" "SSL Labs grade?" "Show me your SBOM."
-BENCHMARKS: $4.88M avg breach, 194 days to detect, NIST CSF 2.0, CIS Controls v8, SOC 2 cost, OWASP Top 10, MITRE ATT&CK, Verizon DBIR.""",
+        "context": """You are a CISO or external security auditor.
+KEY QUESTION: If an attacker gets past the perimeter right now, how far can they go before anyone notices?
+ATTACK AS: the pen tester who scans the external attack surface in 5 minutes, checks credentials in breach databases, and sends a phishing simulation to 3 executives during the meeting.""",
     },
 
     "legal_contracts": {
         "label": "Legal / Contracts",
-        "checklist": """FIRST: Is legal review proportional to the deal size? $10K contract doesn't need $50K of legal. Is a template sufficient?
-CHECK: indemnification symmetry, liability cap, IP ownership, termination (cause vs convenience), auto-renewal, governing law, force majeure, non-compete enforceability, change orders, SLA penalties, data protection, insurance requirements, contract lifecycle management tool, clause library, regulatory change monitoring, litigation hold procedures, data retention, export controls
-RED FLAGS: unlimited liability, one-sided indemnification, vague deliverables, no termination for convenience, auto-renewal no notice, IP grab without carve-outs, unenforceable non-compete, no change order process, no governing law
-ATTACK: "Find every one-sided clause and demand reciprocity." "Non-compete enforceable here?" "Total liability worst case?" "Force majeure cover this risk?" "IP chain verified?"
-BENCHMARKS: lawyer rates ($200-500 mid, $500-1500 BigLaw), review costs, M&A scope, IP registration. Canada: reasonable notice, PIPEDA. US: at-will, CCPA. GPL contamination.""",
+        "context": """You are opposing counsel reviewing a contract before your client signs.
+KEY QUESTION: What's the worst-case liability exposure, and does the contract protect against it or create it?
+ATTACK AS: the lawyer who finds every one-sided clause, tests non-compete enforceability in this jurisdiction, and calculates total liability under worst-case interpretation.""",
     },
 
     "hr_people": {
         "label": "HR / People / Talent",
-        "checklist": """FIRST: Is the HR issue a people problem or a process problem? Hiring more people won't fix bad processes.
-CHECK: voluntary turnover vs industry, time-to-fill, offer acceptance, pay equity, engagement scores (trend), performance reviews, employee classification (W-2/1099), severance procedures, remote/cross-border compliance, DEI metrics, succession planning, skills gap analysis, employer brand (Glassdoor), onboarding completion rate, internal mobility rate, workplace safety (OSHA/WSIB)
-RED FLAGS: no salary bands, time-to-fill >60 days, no exit data, turnover >20% unexplained, no PIP docs, no pay equity audit, misclassification, no remote policy, hollow DEI, no succession plan
-ATTACK: "Promotion velocity by demographic — gaps = lawsuit." "Contractor classification vs IRS 20-factor test." "Reasonable notice cost for all 5yr+ employees." "Remote workers creating tax nexus?"
-BENCHMARKS: cost-per-hire $4,700, recruiter fees 15-25%, HR ratio 1:100, training $1,300/yr, turnover by industry. Canada: ESA, constructive dismissal. US: FLSA, ADA, FMLA.""",
+        "context": """You are a CHRO or employment lawyer reviewing HR practices and policies.
+KEY QUESTION: Is this an HR problem or a management problem disguised as an HR problem?
+ATTACK AS: the employment lawyer who pulls promotion velocity by demographic, tests contractor classification against legal tests, and calculates the severance liability the company doesn't know it has.""",
     },
 }
 
 
 def get_vertical(vid):
-    """Get a vertical's checklist context."""
+    """Get a vertical's context for the AI."""
     v = VERTICALS.get(vid)
     if not v:
         return ""
     return f"""
-## Industry Expertise: {v['label']}
+## {v['label']}
 
-BEFORE ANYTHING: Is this the right approach? Could it be simpler, cheaper, or done with existing tools?
+{v['context']}
 
-EVERY NUMBER GETS CHALLENGED: Do NOT accept any number at face value — prices, timelines, costs, metrics, team sizes, budgets. For EACH number, compare to the industry benchmark using YOUR knowledge. If the number is 30%+ above or below the benchmark, flag it explicitly: "You claim X but the industry average is Y." If you don't know the benchmark, say so — don't skip the check.
-
-PRICING REALITY: If the project charges money, compare against what users get FREE or cheaper elsewhere. If someone can get 80% of this value from a $20/mo AI subscription, a $50 add-on makes no sense.
-
-USER TEST: Can a non-technical person use this in 30 seconds? If it requires downloads, terminal commands, config files, or technical knowledge, it's not ready.
-
-AFTER THE CHECKLIST: Ask yourself — what would a 20-year veteran in this field check that ISN'T on this list? Use your own expertise to go beyond the checklist. The checklist is a starting point, not the ceiling.
-
-{v['checklist']}
+Use YOUR full expertise as a {v['label']} specialist. The above is your lens — apply everything you know about this field. Challenge every number against industry benchmarks. Go beyond what's listed.
 """
 
 
