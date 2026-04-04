@@ -72,7 +72,7 @@ If the code has no security scanning (SAST/DAST), no dependency auditing, and no
 - Observability stack (logging + metrics + tracing — not just console.log)
 - Zero-trust security model
 
-**Red flags in architecture:**
+**Red flags the evaluator will catch:**
 - No CI/CD → manual deployments = human error
 - No containerization → "it works on my machine" problems
 - No API documentation → unmaintainable for other teams
@@ -110,6 +110,7 @@ If the code has no security scanning (SAST/DAST), no dependency auditing, and no
 - Multi-cloud is reality but adds complexity — justify it.
 
 ### Enterprise Client Requirements (What Kills Developer Pitches)
+These are the exact checkboxes the other side's procurement team will verify:
 When a dev team pitches to enterprise:
 1. **No SOC 2** → procurement blocks you before technical evaluation
 2. **No automated testing** → "how do we know your updates won't break production?"
@@ -168,6 +169,20 @@ When a dev team pitches to enterprise:
 8. "What does your observability stack look like? How do you know something is broken before users tell you?"
 9. "What's your data residency policy? Can you guarantee Canadian data stays in Canada?"
 10. "If we need to scale 10x in 6 months, what breaks in your architecture?"
+
+### How the Client's Technical Evaluator Will Attack Your Proposal
+When a dev team pitches to enterprise clients, the client's CTO, VP Engineering, or hired technical advisor will stress-test everything. Here's what they'll use against you:
+
+- They'll ask for your actual test coverage report, not the number — and if it's below 60%, they'll question your deployment confidence
+- They'll grep your public repos for hardcoded secrets, outdated dependencies, and TODO comments — this takes them 5 minutes
+- They'll ask what happens when your lead developer leaves — if the answer involves more than 2 weeks of knowledge transfer, that's a bus factor problem
+- They'll benchmark your deployment frequency against DORA elite (multiple deploys/day) — if you deploy monthly, you're not operating at enterprise speed
+- They'll check your incident response history — "we've never had an outage" is less credible than "here's how we handled our last one"
+- They'll run your API through a load testing tool and see where it breaks — if you can't tell them your throughput ceiling, they'll assume you don't know it
+- They'll look at your git history for commit patterns — if one person touches 80% of files, they know your bus factor is 1 regardless of what you claim
+- They'll ask to see your CI/CD pipeline config, not a description of it — if there's no automated rollback, they'll flag deployment risk
+- They'll verify your SOC 2 or ISO 27001 claims directly with the auditor — fake compliance or "in progress" with no timeline kills the deal on the spot
+- They'll ask your junior developers questions without the tech lead in the room — if they can't explain the architecture, the knowledge isn't distributed
 """
 
 

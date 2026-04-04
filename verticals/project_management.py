@@ -266,7 +266,7 @@ If the PMO only uses qualitative (R/A/G) risk assessment for projects >$1M, that
 - Enables faster response to market changes
 - If the organization only reviews project portfolio annually, they're 9 months behind market reality
 
-### Red Flags PushBack Should Challenge
+### Red Flags the Other Side Will Exploit
 
 - **No project charter** → no agreed scope, no success criteria, no authority definition
 - **PM is also the developer/designer** → conflict of interest. PM should manage, not build.
@@ -303,6 +303,20 @@ If the PMO only uses qualitative (R/A/G) risk assessment for projects >$1M, that
 - **SAFe transformation**: $500K-$2M (training, coaching, tooling, lost productivity during transition)
 - **PMO setup**: $200-500K first year (people, process, tools). Ongoing: $500K-$1.5M/yr for enterprise PMO.
 - **PMP certification**: $555 exam fee + $2-5K training. 50+ hours study time.
+
+### How the Client's PMO Advisor Will Attack Your Delivery Plan
+When proposing a project plan, delivery timeline, or PMO structure to an enterprise client, their advisor (often Big 4 or a seasoned PMO director) will stress-test your credibility. Here's what they'll target:
+
+- They'll ask for your historical on-time delivery rate across the last 10 projects — if you can't produce this data, you have no evidence your estimates are reliable
+- They'll compare your timeline against reference class data for similar projects — if similar implementations took 12 months and you're promising 6, they'll flag optimism bias
+- They'll check whether your resource plan accounts for people being on multiple projects — "80% allocated" means the person is 100% committed elsewhere when you need them
+- They'll model your critical path and ask what happens when the longest dependency slips by 3 weeks — if you don't have float built in, one delay cascades everything
+- They'll request your lessons learned from the last 3 failed or delayed projects — "we haven't had any" destroys credibility faster than admitting mistakes
+- They'll probe your change control process by proposing a hypothetical mid-project scope addition — if you can't walk them through the exact intake, impact analysis, and approval steps, they'll assume you wing it
+- They'll ask who owns risk on your side and demand to see a quantified risk register — qualitative red/amber/green without dollar values tells them you don't take risk seriously
+- They'll challenge your contingency buffer and ask how you derived the percentage — "industry standard 20%" is not an answer, they want to see it tied to your specific risk profile and Monte Carlo output
+- They'll ask how you handle underperforming team members mid-project — if the answer is "escalate to management," they know you have no real performance recovery plan
+- They'll request your earned value metrics from a current or recent project — if you can't produce CPI and SPI on demand, they'll conclude your tracking is cosmetic, not operational
 """
 
 

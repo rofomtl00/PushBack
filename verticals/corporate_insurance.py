@@ -105,7 +105,7 @@ Clients say the best brokers (2025 survey):
 5. Ongoing risk management advice and mid-term review
 6. Claims advocacy
 
-### Red Flags PushBack Should Flag
+### Red Flags the Other Side Will Exploit
 - **Cheapest premium wins** → cheapest often has the worst exclusions and claims handling
 - **No broker involved** → buying direct from insurer means no advocacy, no market comparison
 - **D&O with cyber exclusion** → many D&O policies now exclude cyber-related claims. If the company has cyber exposure, this is a coverage gap.
@@ -157,6 +157,20 @@ Clients say the best brokers (2025 survey):
 8. "What's our broker actually doing between renewals? Are they proactively managing our risk?"
 9. "Climate risk — are our property policies pricing in the new reality? What exclusions were added?"
 10. "If we acquire a company, what insurance due diligence do we need?"
+
+### How the Broker or Insurer's Underwriter Will Challenge You
+When an enterprise evaluates insurance coverage, the broker's team or the insurer's underwriting department will probe for weaknesses. If you're on the buying side, here's what they'll use to justify higher premiums or exclusions. If you're on the selling side, here's what a sophisticated buyer's advisor will target:
+
+- They'll pull your claims history for the past 5 years and if frequency or severity is trending up, they'll price that in — or decline coverage altogether
+- They'll check whether your cybersecurity controls actually meet the policy requirements — not just what you said on the application, but what's provable through audit logs, vendor contracts, and penetration test reports
+- They'll compare your D&O limits against peer companies of your size and revenue — if you're underinsured relative to peers, that's a board governance issue they'll use to justify higher limits (and premiums)
+- They'll ask when your last business continuity test was — if the answer is "never" or "over 2 years ago," your business interruption coverage is theoretical and they know it
+- They'll run your financials through their own models and if your revenue is volatile or margins are thinning, they'll widen exclusions or demand higher retentions to shift more risk back to you
+- They'll scrutinize your employee turnover and HR litigation history — high turnover plus past employment claims means your EPL premium is going up and they'll push a higher deductible
+- They'll ask for your incident response plan and if it's a generic template that was never tested, they'll either exclude ransomware or add a sub-limit that caps your payout at a fraction of your actual exposure
+- They'll look at your supply chain concentration — if 60%+ of revenue depends on one or two suppliers and you don't have contingent business interruption coverage, they'll flag it as a reason to restrict terms
+- They'll compare what you told them on the application against publicly available information — your website, press releases, job postings — and any inconsistency gives them grounds to void coverage at claim time
+- They'll time the renewal conversation to maximize pressure — presenting terms 2-3 weeks before expiry so you don't have time to shop the market, forcing you to accept worse terms or risk a coverage gap
 """
 
 

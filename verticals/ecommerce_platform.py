@@ -131,7 +131,7 @@ Enterprise procurement teams will drill into:
 6. **Breach notification** — 72-hour notification requirement under PIPEDA.
 7. **Analytics export** — the retailer must be able to export ALL their data at any time in standard formats.
 
-### RFP Response Red Flags
+### Red Flags the Other Side Will Exploit
 When reviewing a pitch or RFP response for a large retailer contract:
 - No mention of existing system integration → "you don't understand our environment"
 - No migration plan with SEO preservation → "you'll destroy our organic traffic"
@@ -244,6 +244,20 @@ PushBack should proactively surface these if relevant:
 - DoorDash, Uber, Instacart partnerships for same-day from store
 - Ship-from-store reduces delivery time and cost vs centralized fulfillment
 - If the pitch doesn't address last-mile strategy, enterprise buyers will ask about it
+
+### How the Other Side's Advisor Will Attack Your Pitch
+When pitching an ecommerce platform to a large retailer, the retailer's evaluation team will likely have Accenture, Deloitte, or an internal consulting group advising them. Here's what they'll use against you:
+
+- They'll benchmark your TCO against Shopify Plus ($150K/3yr) and SFCC ($1-3M/3yr) and ask where you fall — if you can't answer instantly with exact numbers, you look unprepared
+- They'll ask for your SOC 2 Type 2 report and if you only have Type 1, they'll recommend the client wait until you complete the audit cycle
+- They'll check if your reference customers are comparable in size — a 5-store reference doesn't validate a 200-store deployment, and they'll point that out in their evaluation summary
+- They'll request your last 12 months of uptime data and compare it against your SLA promise — any gap between claimed and actual becomes Slide 14 in their risk assessment deck
+- They'll ask how many production clients you've migrated off a competitor platform and how long each migration took — vague answers like "it depends" get scored as zero evidence
+- They'll probe your team roster for key-person risk — if your CTO, lead architect, and sales engineer are the same person, they'll flag single-point-of-failure to the client's steering committee
+- They'll calculate your revenue per employee and compare it to industry benchmarks ($200-400K/employee for healthy SaaS) — if yours is materially lower, they'll question your operational efficiency
+- They'll ask for a documented rollback plan in case the implementation fails at go-live — no rollback plan means the client has no safety net, and the advisor will make sure the client knows it
+- They'll verify your PCI DSS compliance scope and ask whether you handle raw card data or tokenize through a third party — the wrong answer here shifts liability to the retailer, and the advisor will kill the deal over it
+- They'll run a Lighthouse audit on your demo environment during the evaluation and flag every Core Web Vital failure — if your own demo can't pass, they'll argue production at scale has no chance
 """
 
 

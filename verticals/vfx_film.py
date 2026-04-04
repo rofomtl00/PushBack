@@ -117,7 +117,7 @@ This is where REAL money is saved — studios route work based on incentives:
 - Unreal Engine enables this: build the sequence in real-time, shoot with virtual camera, hand off to VFX for polish.
 - Reduces miscommunication, cuts revision rounds, saves 20-30% on complex sequences.
 
-### Red Flags Studios Watch For
+### Red Flags the Other Side Will Exploit
 - Underbidding → you'll deliver garbage or go bankrupt mid-show (Rhythm & Hues, MPC shutdowns)
 - No TPN certification → security risk, won't be considered
 - Over-promising timeline → late delivery is career-ending in this industry
@@ -260,6 +260,20 @@ When reviewing a VFX studio pitch, RFP response, or production budget:
 - Is there TPN certification?
 - Does the timeline account for creative changes, or is it optimistic-case only?
 - Is virtual production being used where it actually saves money, or as a buzzword?
+
+### How the Studio's Advisor Will Attack Your Bid
+When bidding for VFX/post-production work from Warner Bros, Amazon, Netflix, or Disney, the studio's production team has advisors, line producers, and VFX supervisors who evaluate bids professionally. Here's what they'll use against you:
+
+- They'll compare your per-shot rates against 3-5 other vendors they're also talking to — if you're 20% above market without a clear quality justification, you're eliminated before the conversation starts
+- They'll check your TPN certification status and last audit date — no TPN means no studio content, period, and a stale audit means you're a security liability
+- They'll ask for your artist retention rate over the last 18 months — high turnover means mid-project quality drops and they've been burned by this before
+- They'll request your pipeline documentation and if it's informal or tribal knowledge, that's a vendor risk flag that drops you a tier in their evaluation matrix
+- They'll model what happens if you miss a milestone by 2 weeks — what's the downstream cost to the production schedule, the marketing campaign, and the release window
+- They'll ask you to name your 3 biggest projects in the last 2 years and then call those clients to ask what went wrong — not what went right
+- They'll pressure you to absorb revision rounds 4-10 as "part of the relationship" — this is where vendors hemorrhage margin and they know it
+- They'll pit your jurisdiction tax credit strategy against a competitor who routes through Australia at 40% — if you're quoting from a 0% jurisdiction without addressing this, you look unsophisticated
+- They'll demand a ramp plan showing how you go from 50 to 200 artists in 6 weeks and if you can't name the recruiting pipeline, bench depth, or partner studios, your scalability claim is hollow
+- They'll test whether your AI/ML efficiency claims are production-proven or R&D demos — "show me 50 shots where this tool was used in delivery, not a tech reel"
 """
 
 
