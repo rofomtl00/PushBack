@@ -157,6 +157,40 @@ VERTICALS = {
     "project_management": ("verticals.project_management", "Project management, PMO, portfolio governance, Agile/Scrum/SAFe, delivery methodology. Use when the CREATOR is setting up or evaluating PM practices, tools, or team delivery."),
 }
 
+def _ext_to_group(ext: str) -> str:
+    """Map file extension to a high-level group for classification hints."""
+    code = {".py", ".js", ".ts", ".tsx", ".jsx", ".go", ".rs", ".java",
+            ".cpp", ".c", ".h", ".rb", ".php", ".swift", ".kt",
+            ".html", ".css", ".scss", ".sql", ".sh", ".json", ".yaml", ".yml", ".toml"}
+    spreadsheet = {".xlsx", ".xls", ".csv"}
+    presentation = {".pptx", ".ppt", ".key"}
+    document = {".pdf", ".docx", ".doc", ".txt", ".md", ".rtf"}
+    video = {".mp4", ".mov", ".avi", ".mkv", ".webm", ".flv", ".wmv", ".m4v",
+             ".prproj", ".drp", ".fcpxml", ".aep"}
+    audio = {".mp3", ".wav", ".flac", ".aac", ".ogg", ".m4a", ".aif", ".aiff",
+             ".als", ".flp", ".logic", ".ptx", ".rpp"}
+    graphics_3d = {".blend", ".fbx", ".obj", ".glb", ".gltf", ".stl", ".usd",
+                   ".c4d", ".max", ".ma", ".psd", ".ai", ".xcf", ".sketch", ".fig",
+                   ".indd", ".afdesign", ".afphoto"}
+    cad = {".dwg", ".dxf", ".step", ".stp", ".iges", ".igs"}
+    medical = {".dcm", ".nii", ".dicom"}
+    image = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".tiff", ".bmp", ".svg"}
+    screenplay = {".fdx", ".fountain"}
+
+    if ext in code: return "code"
+    if ext in spreadsheet: return "spreadsheet"
+    if ext in presentation: return "presentation"
+    if ext in document: return "document"
+    if ext in video: return "video"
+    if ext in audio: return "audio"
+    if ext in graphics_3d: return "3d_graphics"
+    if ext in cad: return "cad"
+    if ext in medical: return "medical"
+    if ext in image: return "image"
+    if ext in screenplay: return "screenplay"
+    return "unknown"
+
+
 def _classify_and_load_vertical(files: list, context: str) -> tuple:
     """Use AI to classify document type and select the right vertical (if any).
 
@@ -181,20 +215,36 @@ def _classify_and_load_vertical(files: list, context: str) -> tuple:
         f"- {vid}: {desc}" for vid, (_, desc) in VERTICALS.items()
     )
 
-    # Fast path: if majority of files are code, skip the AI call
-    code_exts = {".py", ".js", ".ts", ".tsx", ".jsx", ".go", ".rs", ".java",
-                 ".cpp", ".c", ".h", ".rb", ".php", ".swift", ".kt",
-                 ".html", ".css", ".scss", ".sql", ".sh", ".json", ".yaml", ".yml", ".toml"}
-    code_count = sum(1 for f in files if f.get("type") in code_exts)
-    if code_count > len(files) / 2:
-        # Definitely a code project — don't let content keywords mislead the classifier
-        try:
-            module_path = VERTICALS["developer"][0]
-            import importlib
-            mod = importlib.import_module(module_path)
-            return {"type": "code_review", "label": "Code Review"}, mod.VERTICAL_CONTEXT
-        except Exception:
-            return {"type": "code_review", "label": "Code Review"}, ""
+    # ── Build file-type hint for the AI classifier ──
+    import importlib
+    ext_counts = {}
+    for f in files:
+        ext = f.get("type", "")
+        group = _ext_to_group(ext)
+        ext_counts[group] = ext_counts.get(group, 0) + 1
+    total = len(files) or 1
+    dominant = max(ext_counts, key=ext_counts.get) if ext_counts else "unknown"
+    dominant_pct = ext_counts.get(dominant, 0) / total
+
+    file_type_hint = ""
+    if dominant_pct > 0.5:
+        hints = {
+            "code": "HINT: Majority of files are source code (.py, .js, .ts, etc). This is likely a software project. Use 'developer' vertical unless the content clearly indicates otherwise.",
+            "spreadsheet": "HINT: Majority of files are spreadsheets (.xlsx, .csv). Could be financial data, project data, or analytics. Classify based on content, not file type.",
+            "presentation": "HINT: Majority of files are presentations (.pptx). Could be a pitch deck, training material, or proposal. Classify based on content.",
+            "video": "HINT: Majority of files are video/project files. Likely film, VFX, or media production.",
+            "audio": "HINT: Majority of files are audio/music files. Likely music or audio production.",
+            "3d_graphics": "HINT: Majority of files are 3D/graphics project files (.blend, .psd, .ma, etc). Likely VFX, design, or creative production.",
+            "cad": "HINT: Majority of files are CAD/engineering files (.dwg, .step, etc). Likely engineering or manufacturing.",
+            "medical": "HINT: Majority of files are medical imaging (DICOM). Likely healthcare or medical research.",
+            "screenplay": "HINT: Files contain screenplay formatting (INT./EXT., FADE IN). Likely film/TV script.",
+        }
+        file_type_hint = hints.get(dominant, "")
+
+    # Check for screenplay markers in content
+    t = context[:2000].lower()
+    if not file_type_hint and sum(1 for w in ["int.", "ext.", "fade in", "cut to"] if w in t) >= 2:
+        file_type_hint = "HINT: Content contains screenplay formatting (INT./EXT., FADE IN). This is likely a film/TV script."
 
     classify_prompt = f"""Classify these uploaded documents. You must determine:
 1. What TYPE of document/project this is (the label shown to the user)
@@ -216,6 +266,8 @@ Content preview:
 
 Available verticals (pick AT MOST one, or "none"):
 {vertical_options}
+
+{file_type_hint}
 
 Respond in EXACTLY this format, nothing else:
 LABEL: <short label for the user, 2-3 words>
