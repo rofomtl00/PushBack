@@ -34,13 +34,13 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
 
 
 def _load_learnings() -> list:
-    """Load learnings from Supabase. Falls back to empty if unavailable."""
+    """Load only VALIDATED learnings from Supabase (3+ confirmations)."""
     if not SUPABASE_KEY:
         return []
     try:
         import urllib.request
         req = urllib.request.Request(
-            f"{SUPABASE_URL}/rest/v1/learnings?order=created_at.desc&limit=100",
+            f"{SUPABASE_URL}/rest/v1/learnings?status=eq.validated&order=created_at.desc&limit=100",
             headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
         )
         with urllib.request.urlopen(req, timeout=5) as resp:
@@ -50,7 +50,8 @@ def _load_learnings() -> list:
 
 
 def _save_learning(learning: dict):
-    """Save a learning to Supabase. Fire and forget — never blocks analysis."""
+    """Save a learning to Supabase as PENDING. Never applied until validated.
+    Learnings need 3+ independent confirmations before becoming active."""
     if not SUPABASE_KEY:
         return
     try:
@@ -60,6 +61,8 @@ def _save_learning(learning: dict):
             "industry": learning.get("industry", ""),
             "ai_said": learning.get("ai_said", "")[:500],
             "user_said": learning.get("user_said", "")[:500],
+            "status": "pending",
+            "confirmations": 0,
         }).encode()
         req = urllib.request.Request(
             f"{SUPABASE_URL}/rest/v1/learnings",
@@ -74,7 +77,48 @@ def _save_learning(learning: dict):
         )
         urllib.request.urlopen(req, timeout=5)
     except Exception:
-        pass  # Never block analysis for learning storage
+        pass
+
+
+def _try_confirm_existing(industry: str, user_text: str):
+    """If a similar pending learning exists, increment its confirmations.
+    At 3 confirmations, promote to validated status."""
+    if not SUPABASE_KEY:
+        return
+    try:
+        import urllib.request
+        # Find pending learnings in same industry
+        req = urllib.request.Request(
+            f"{SUPABASE_URL}/rest/v1/learnings?status=eq.pending&industry=eq.{industry}&limit=20",
+            headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            pending = json.loads(resp.read())
+
+        # Check for similarity (same keywords in user_said)
+        user_words = set(user_text.lower().split())
+        for p in pending:
+            existing_words = set((p.get("user_said", "") or "").lower().split())
+            overlap = len(user_words & existing_words)
+            if overlap >= 3:  # At least 3 words in common = similar correction
+                new_count = (p.get("confirmations", 0) or 0) + 1
+                new_status = "validated" if new_count >= 3 else "pending"
+                data = json.dumps({"confirmations": new_count, "status": new_status}).encode()
+                patch = urllib.request.Request(
+                    f"{SUPABASE_URL}/rest/v1/learnings?id=eq.{p['id']}",
+                    data=data,
+                    headers={
+                        "apikey": SUPABASE_KEY,
+                        "Authorization": f"Bearer {SUPABASE_KEY}",
+                        "Content-Type": "application/json",
+                        "Prefer": "return=minimal",
+                    },
+                    method="PATCH"
+                )
+                urllib.request.urlopen(patch, timeout=5)
+                return  # Confirmed an existing one, don't create new
+    except Exception:
+        pass
 
 
 def _extract_learnings(session: dict):
@@ -106,6 +150,8 @@ def _extract_learnings(session: dict):
         is_agreement = any(s in text for s in agree_signals)
 
         if is_defense or is_agreement:
+            # Check if a similar learning already exists — confirm it instead of duplicating
+            _try_confirm_existing(doc_type, text[:200])
             # Get the AI message they're responding to (previous message)
             ai_msg = chat[i - 1].get("content", "")[:300] if i > 0 else ""
             user_msg = msg.get("content", "")[:300]
