@@ -72,6 +72,10 @@ def _detect_verticals(text: str) -> str:
         "cybersecurity": ["security", "vulnerability", "firewall", "mfa", "breach", "encryption"],
         "legal_contracts": ["contract", "clause", "indemnification", "liability", "nda", "ip ownership"],
         "hr_people": ["hiring", "salary", "turnover", "employee", "recruitment", "hr"],
+        "business_analyst": ["business case", "strategy", "roi", "market size", "stakeholder", "kpi"],
+        "quant_research": ["backtest", "sharpe", "alpha", "trading strategy", "p-value", "overfitting"],
+        "business_writing": ["memo", "proposal", "executive summary", "board deck", "email"],
+        "digital_services": ["rfp", "vendor", "sow", "crm", "managed services", "procurement", "platform build"],
     }
 
     for vid, keywords in signals.items():
@@ -153,7 +157,8 @@ async def analyze_with_verticals(text: str, verticals: str) -> str:
     Pass a comma-separated list for multi-vertical analysis (recommended).
     Available: developer, ecommerce_platform, vfx_film, corporate_insurance,
     project_management, design_creative, finance_accounting, cybersecurity,
-    legal_contracts, hr_people, business_analyst, quant_research
+    legal_contracts, hr_people, business_analyst, quant_research,
+    business_writing, digital_services
 
     Args:
         text: The content to analyze

@@ -533,6 +533,8 @@ Examples of multi-vertical selection:
 - Web app source code with HTML/CSS → developer + design_creative (code quality AND UI/UX critique)
 - Trading bot Python code → developer + quant_research + finance_accounting (code quality AND statistical validity AND P&L correctness). If it has a dashboard/UI, add design_creative too.
 - Ecommerce platform pitch with project timeline → ecommerce_platform + project_management
+- RFP, SOW, vendor proposal for CRM/ecommerce/web/database/managed services → digital_services + legal_contracts + finance_accounting (procurement + contract terms + cost analysis). Add project_management if timeline/resources included
+- Enterprise platform build proposal → digital_services + developer + design_creative (procurement + technical + UX)
 - VFX studio insurance review → vfx_film + corporate_insurance
 - SaaS dashboard code → developer + design_creative (always pair code with design if there's any UI)
 - Medical software → developer + the relevant domain vertical
