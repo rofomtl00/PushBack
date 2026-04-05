@@ -212,7 +212,7 @@ if __name__ == "__main__":
     import sys
     if "--http" in sys.argv:
         import uvicorn
-        port = int(os.environ.get("MCP_PORT", 8001))
+        port = int(os.environ.get("PORT", os.environ.get("MCP_PORT", 8001)))
         print(f"PushBack MCP server (HTTP/SSE) on port {port}")
         uvicorn.run(app, host="0.0.0.0", port=port)
     else:
