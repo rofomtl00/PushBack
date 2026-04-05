@@ -1388,6 +1388,23 @@ def mcp_tools():
     })
 
 
+@app.route("/api/extension/verticals")
+def extension_verticals():
+    """Serve vertical instructions for the PushBack extension to cache locally.
+    The extension injects these into the user's AI chat input."""
+    from verticals.all_verticals import VERTICALS, UNIVERSAL_RULES
+    result = {
+        "universal_rules": UNIVERSAL_RULES,
+        "verticals": {},
+    }
+    for vid, v in VERTICALS.items():
+        result["verticals"][vid] = {
+            "label": v["label"],
+            "context": v["context"],
+        }
+    return jsonify(result)
+
+
 # ═══════════════════════════════════════════════
 # HTML — Professional light theme, clean SaaS UI
 # ═══════════════════════════════════════════════
