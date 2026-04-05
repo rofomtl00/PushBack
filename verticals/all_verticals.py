@@ -44,6 +44,13 @@ CHECK ALL OF THESE — flag any that are missing or inadequate:
 - Staging/production environment separation
 - Incident response and rollback procedures
 - DEPLOYMENT: env vars read correctly for target platform, all deps in requirements/package files, no hardcoded ports/paths, console errors in any web UI
+- DEPENDENCIES: run `npm audit` / `pip audit` / `cargo audit`. Zero critical CVEs allowed. High CVEs must have documented accept-or-fix decision within 7 days
+- DOCKER: no `latest` tags in production Dockerfiles. Pin every base image to a SHA256 digest. Multi-stage builds required — target <500MB for most apps, <100MB for Go/Rust
+- ENVIRONMENT: every env var used in code must exist in .env.example with a placeholder. Count env vars in code vs .env.example — mismatch = deployment will fail
+- API RATE LIMITING: every public endpoint must have rate limiting. Default: 100 req/min per IP for APIs, 10 req/min for auth endpoints. Check for missing rate limits on file upload, password reset, and webhook endpoints specifically
+- DATABASE PERFORMANCE: every query that touches user-facing pages must complete in <100ms at p95. Check for N+1 queries (ORM lazy loading), missing indexes on WHERE/JOIN columns, and full table scans
+- ERROR RESPONSES: API errors must return consistent JSON structure with error code, message, and request ID. Never leak stack traces, file paths, or SQL queries in production error responses
+- SECRETS: grep for hardcoded API keys, passwords, tokens in source files. Check: .env in .gitignore? No secrets in Docker build args? No secrets in CI/CD logs?
 - COST: if using paid APIs, verify actual cost per request against current provider pricing. A 10x cost assumption error kills the business.
 
 CODE INTEGRITY RULES — apply to any codebase:
@@ -144,6 +151,10 @@ CHECK ALL OF THESE:
 - Delivery format specs (IMF/DCP)
 - Insurance coverage for production assets
 - What happens if a milestone is missed by 2 weeks
+- MARKET RATES (2024-2025): Hero VFX shots $5,000-25,000/shot, standard shots $1,500-5,000, cleanup/paint $500-1,500. Feature film: $800-2,000/shot average across full show. If vendor bids <50% of these ranges, ask what they're cutting
+- COLOR PIPELINE: ACES 1.3 is current standard. If vendor uses a proprietary color pipeline, demand conversion LUTs and round-trip test. DaVinci Resolve reference grade should match Nuke comp output within deltaE <2
+- DELIVERY SPECS: IMF for streaming (Netflix NITS spec requires 4000 nit peak for HDR), DCP for theatrical (JPEG2000, 250Mbps max). Confirm: resolution (4K/2K), frame rate, color space (Rec.709, P3-D65, Rec.2020), bit depth (10-bit minimum for HDR)
+- STORAGE/TRANSFER: 4K EXR frame = ~25MB, 1000-frame shot = 25GB. A 500-shot show = 12+ TB of finals alone. Aspera/Signiant for transfer, not FTP/Dropbox. Verify transfer encryption (AES-256 in transit)
 
 DEEP VALIDATION CHECKS — catch the sophisticated failures:
 1. BID vs MARKET RATE: Per-shot rates by complexity tier must be compared against current market. Vendor bidding 30% below market is underbidding to win (change orders follow) or understaffing.
@@ -191,6 +202,10 @@ CHECK ALL OF THESE — flag any that are missing or inadequate:
 - Annual coverage review meeting with broker documented
 - Business interruption values based on actual financial data, not estimates
 - Broker of record letter current and correct
+- CYBER INSURANCE MINIMUMS: minimum $1M for companies <$50M revenue, $5M for $50-500M, $10M+ for >$500M. Check sub-limits: ransomware sub-limit often 50% of main limit. Business interruption waiting period: 8-12 hours is standard, 24+ hours is a gap
+- D&O STRUCTURE: Side A (personal protection) must be separate from Side B/C (company reimbursement). Side A should be on a standalone policy for maximum protection. Run-off coverage (tail) needed for M&A scenarios — minimum 6 years
+- PROFESSIONAL LIABILITY (E&O): claims-made policy requires tail coverage. If switching carriers, confirm prior acts coverage. Retroactive date should be the original policy inception, not the new policy date
+- PROPERTY VALUATION: replacement cost vs actual cash value (ACV includes depreciation — gap can be 30-50%). Ordinance or law coverage for buildings that must be rebuilt to current code. Flood and earthquake are ALWAYS separate — never assume they're included
 
 DEEP VALIDATION CHECKS — flag any that fail:
 1. SUBLIMIT THAT VOIDS MAIN COVERAGE: policy has a $5M aggregate limit but a $250K sublimit for the specific peril most likely to hit (e.g., water damage sublimit on a property in a flood zone, or cyber extortion sublimit on a tech company). The sublimit effectively makes the headline coverage number meaningless for the actual risk.
@@ -241,6 +256,13 @@ CHECK ALL OF THESE:
 - Reference class forecasting (how long did similar projects ACTUALLY take)
 - Velocity trend (improving or declining)
 - Budget and timeline sensitivity analysis
+- Schedule: critical path identified with float calculated for each task. If float is 0 days on >3 consecutive tasks, the schedule has no buffer and will slip
+- Budget: contingency is 10-15% for well-defined scope, 20-30% for R&D/innovation, 0% = guaranteed overrun. Show the calculation, not just the number
+- Resources: name the top 3 bottleneck people. If any person is >80% utilized across projects, they ARE the risk. Show their allocation by week
+- Velocity: if Agile, show sprint velocity for last 6 sprints with trend line. Declining velocity = team is burning out or scope is expanding. Use actual points delivered, not committed
+- Dependencies: external dependencies (vendor deliverables, regulatory approvals, client sign-offs) each need a named owner on the OTHER side and an escalation path if they're late
+- Risk register: each risk needs probability (%), impact ($), Expected Monetary Value (prob x impact), and a named owner. "Medium/High" ratings without numbers are useless
+- Communication: stakeholder matrix with influence/interest quadrant. High-influence/low-interest stakeholders are the ones who kill projects at the 11th hour
 
 DEEP VALIDATION CHECKS — catch the sophisticated failures:
 1. PLANNING FALLACY: Compare planned duration against reference class data. Projects historically overrun by 45-300% depending on category. If no reference class is cited, the estimate is a guess.
@@ -281,6 +303,13 @@ CHECK ALL OF THESE:
 - Core Web Vitals (LCP <2.5s, CLS <0.1)
 - Animation performance and reduced-motion support (prefers-reduced-motion)
 - Handoff tooling between design and development
+- Lighthouse audit: run actual Lighthouse (not just claim compliance). Scores required: Performance >90, Accessibility >90, Best Practices >90, SEO >90. Screenshot the results
+- Screen reader testing: test with actual screen reader (VoiceOver on Mac, NVDA on Windows) — not just checking ARIA attributes exist. Navigate the primary task flow eyes-closed
+- Color contrast measurement: use WebAIM contrast checker with specific hex values. Do not estimate — measure. Minimum 4.5:1 for normal text, 3:1 for large text (18px+ or 14px+ bold)
+- Responsive breakpoint testing at these exact widths: 320px (iPhone SE), 375px (iPhone), 390px (iPhone 14), 768px (iPad), 1024px (iPad landscape), 1280px (laptop), 1440px (desktop), 1920px (full HD)
+- Font size verification: measure actual font sizes in browser DevTools computed styles — design tokens may not match rendered output
+- Image alt text audit: decorative images need alt="" (empty), informative images need descriptive alt, no "image of..." prefix, no filename as alt text
+- Form validation testing: test with empty submit, too-long input (>10,000 chars), special characters (', ", <, >), and paste-from-Excel (hidden characters like \t, \r, zero-width spaces)
 
 DEEP VALIDATION CHECKS — catch the sophisticated failures:
 1. ACCESSIBILITY BEYOND CHECKLIST: WCAG AA checked but not tested with actual assistive technology. Screen reader testing on actual build, keyboard-only navigation through every flow, real contrast on rendered UI (not just tokens).
@@ -317,6 +346,13 @@ CHECK ALL OF THESE:
 - EBITDA adjustments (more than 3 add-backs = earnings manipulation signal)
 - UNIT ECONOMICS: if using paid APIs/services, verify actual cost per transaction against current provider pricing pages — not estimates
 - Pricing compared to market alternatives (is the customer overpaying for what they could get cheaper?)
+- Excel/spreadsheet validation: check for hardcoded numbers in formulas (should be cell references), broken references (#REF!, #N/A), hidden rows/columns that change totals, circular references, no formula auditing trail
+- Chart accuracy: does the chart Y-axis start at zero? Are bar widths equal? Does the pie chart have >5 slices (unreadable)? Do the chart numbers match the source table? Is the scale consistent across comparison charts?
+- Canada tax specifics: GST/HST/PST applied correctly by province (ON=13% HST, QC=5%GST+9.975%QST, AB=5%GST only, BC=5%+7%, SK=5%+6%), RRSP contribution room carried forward, TFSA $7,000 limit (2024+), FHSA $8,000/yr $40,000 lifetime, SR&ED credit calculations, T2 corporate filing deadlines
+- US tax specifics: state income tax nexus triggered by remote employees, 401(k) $23,000 limit (2024), Roth conversion ladder timing, QBI deduction 20% for pass-throughs, state sales tax collection thresholds (varies by state), SALT deduction $10,000 cap
+- International: withholding tax rates by treaty (US-Canada 15% dividends, 0-10% interest), VAT/GST registration thresholds, permanent establishment risk, transfer pricing documentation requirements, FBAR/$10K+ foreign account reporting
+- Bank reconciliation: every account reconciled within 30 days, outstanding items >90 days flagged, intercompany balances net to zero
+- Accounts receivable aging: AR >90 days as % of total (>15% = collection problem), bad debt allowance methodology documented, write-off authorization trail
 
 DEEP VALIDATION CHECKS — catch the sophisticated failures:
 1. REVENUE RECOGNITION TIMING: Revenue recognized on percentage-of-completion with subjective milestones, or channel-stuffing (quarter-end spikes with next-quarter returns). Compare revenue timing to cash collection — growing gap = aggressive recognition.
@@ -368,6 +404,11 @@ CHECK ALL OF THESE:
 - Insider threat program
 - Security logging and monitoring (can you detect a breach in hours, not months?)
 - SSL/TLS configuration grade
+- VULNERABILITY SCANNING TOOLS: Nessus, Qualys, or Rapid7 for infrastructure. Snyk, Dependabot, or Trivy for application dependencies. OWASP ZAP or Burp Suite for web app DAST. Scan frequency: weekly minimum for external, monthly for internal, on every PR for dependencies
+- EDR SPECIFICS: CrowdStrike Falcon, SentinelOne, or Microsoft Defender for Endpoint (not just "antivirus"). Check: is EDR deployed on 100% of endpoints including servers and developer workstations? Is auto-isolation enabled for high-confidence detections?
+- BACKUP RULE: 3-2-1 minimum (3 copies, 2 different media, 1 offsite). Test restore quarterly with documented RTO/RPO. RTO <4 hours for critical systems, <24 hours for non-critical. Air-gapped backup for ransomware resilience
+- PASSWORD POLICY: minimum 14 characters (NIST 800-63B). No complexity requirements (they cause worse passwords). Check against Have I Been Pwned API on registration. No password rotation schedule (NIST says rotation causes weaker passwords)
+- CLOUD BASELINES: CIS Benchmarks for AWS/Azure/GCP as baseline. Check: S3 buckets not public, IAM roles follow least privilege (no inline policies, no * permissions), CloudTrail/audit logging enabled on all accounts, no root account access keys
 
 DEEP VALIDATION CHECKS — catch the sophisticated failures that surface-level reviews miss:
 1. SCAN SCOPE GAP: Vulnerability scan covers external IPs only — not internal networks, containers, or cloud workloads. Attacker pivots internally and finds an unscanned playground. Cross-reference the scan target list against the actual asset inventory. If they don't match, the scan is incomplete.
@@ -428,6 +469,13 @@ CHECK ALL OF THESE — flag any that are missing or inadequate:
 - Representations and warranties section present
 - Severability and entire agreement clauses present
 - Signature blocks match legal entity names exactly
+- JURISDICTION ENFORCEABILITY: non-compete clauses unenforceable in California, severely limited in Colorado, Oklahoma, North Dakota, Minnesota. In Canada: must be reasonable in scope, geography, and duration — courts routinely strike them down
+- LIMITATION OF LIABILITY: cap should be stated as a specific dollar amount or multiple of fees paid (typical: 12 months of fees). Uncapped liability = reject or renegotiate. Carve-outs for IP infringement, data breach, and willful misconduct are standard
+- DATA PROTECTION: if personal data crosses borders, identify the transfer mechanism (SCCs, BCRs, adequacy decision). GDPR fines up to 4% of global revenue. CCPA/CPRA: right to delete, opt-out of sale. PIPEDA (Canada): consent required, breach notification within 72 hours to OPC
+- INDEMNIFICATION STRUCTURE: check if mutual or one-way. One-way indemnification favoring the drafter = red flag. Typical caps: same as liability cap. Defense obligation (duty to defend vs. duty to indemnify) — these are different and both matter
+- PAYMENT TERMS: Net 30 is standard. Net 60+ = financing the other party. Late payment interest rate specified? Right to suspend services for non-payment?
+- AUTO-RENEWAL TRAPS: check for auto-renewal with price escalation clauses. Notice period to cancel (typically 30-90 days before renewal). If notice window is <30 days, it's designed to trap you
+- INSURANCE MINIMUMS: commercial general liability ($1M/$2M), professional liability ($1M+), cyber liability ($1M+ if handling data), workers comp (statutory). Verify certificates are current, not just referenced
 
 DEEP VALIDATION CHECKS — flag any that fail:
 1. INDEMNIFICATION CROSS-REFERENCE: indemnification cap references a section number — verify that section number actually exists and contains what the clause claims. Wrong cross-references are common after document edits and can void the cap entirely.
@@ -492,6 +540,13 @@ CHECK ALL OF THESE — flag any that are missing or inadequate:
 - Background check authorization obtained before running
 - Handbook acknowledgment signed and on file
 - I-9 or equivalent work authorization completed within required timeframe
+- OVERTIME THRESHOLDS: US FLSA salary threshold $35,568/yr (employees below must be paid OT). California: daily OT after 8 hours (not just weekly). Canada varies by province — Ontario OT after 44 hrs/week, Quebec after 40 hrs, Alberta after 8 hrs/day
+- TERMINATION NOTICE: Canada requires reasonable notice or pay in lieu (common law: ~1 month per year of service, up to 24 months). US at-will states: can terminate without cause but not for illegal reasons. WARN Act: 60 days notice for mass layoffs (100+ employees)
+- CONTRACTOR vs EMPLOYEE: IRS 20-factor test (US), CRA guidelines (Canada). Key factors: control over how work is done, provision of tools, ability to profit/loss, exclusivity. Misclassification penalties: back taxes + penalties + benefits owed
+- PAY EQUITY SPECIFICS: Canada Pay Equity Act (federal, 10+ employees). US Equal Pay Act + state laws. Run regression analysis on comp data by gender/race/age — if >5% unexplained gap, it's a lawsuit waiting
+- LEAVE REQUIREMENTS: FMLA (US): 12 weeks unpaid for 50+ employee companies. Canada: maternity 15 weeks EI + parental 35-61 weeks. State/provincial laws stack on top — California CFRA, Ontario ESA, Quebec AEFP
+- REMOTE WORK TAX NEXUS: employee in a state/province where you're not registered = tax nexus + employment law compliance obligation. Track where employees actually work, not where they were hired
+- NON-COMPETE BY JURISDICTION: California (banned), Illinois (banned for <$75K salary), Massachusetts (12 month max, garden leave required), Ontario (banned for most employees as of Oct 2021), federal FTC rule (check current status)
 
 DEEP VALIDATION CHECKS — flag any that fail:
 1. JOB DESCRIPTION vs ACTUAL DUTIES MISMATCH: job description lists duties that don't match what the employee actually does — this is the #1 trigger for FLSA misclassification lawsuits. If the description says "manages a team" but the person has zero direct reports, the exempt classification is indefensible.
@@ -684,6 +739,10 @@ CHECK ALL OF THESE — flag any that are missing or inadequate:
 - Length appropriate to medium (email: <5 paragraphs, memo: 1-2 pages, proposal: per RFP requirements)
 - No jargon the recipient wouldn't know (define acronyms on first use)
 - Subject line / title tells the reader what to expect and why it matters
+- EMAIL SPECIFICS: subject line <60 characters (truncated on mobile after that). One ask per email. If >3 paragraphs, it should be a memo or doc instead
+- PROPOSAL/SOW: pricing section must show unit costs, quantities, and totals that cross-check. Payment milestones tied to deliverables, not dates. Assumptions section must list every assumption that could change the price
+- BOARD DECK: max 15 slides for a 30-min slot (2 min/slide average). First slide = the ask. Last slide = the ask again. No slide with >6 bullet points. No bullet point >2 lines
+- STATUS REPORT: Red/Amber/Green must have defined thresholds (e.g., Red = >10% over budget or >2 weeks behind). Every Red item needs a recovery plan with a date. No "monitoring" as an action — that's not an action
 
 DEEP VALIDATION CHECKS — catch the sophisticated failures:
 1. CLAIM WITHOUT EVIDENCE: Every "we exceeded targets" or "the market is growing" needs a number. If the document has more adjectives than data points, it's opinion disguised as analysis. Count: how many claims vs how many supporting facts?
