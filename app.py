@@ -541,6 +541,7 @@ Examples of multi-vertical selection:
 - Business plan PDF → pick the most relevant industry vertical, or none if generic
 If any file contains HTML, CSS, templates, or UI components, ALWAYS add design_creative.
 If any file is a presentation, pitch deck, slide deck, or contains charts/graphs/data visualizations, ALWAYS add design_creative + business_writing (visual quality AND content clarity).
+If the content discusses websites, platforms, CRM, ecommerce, databases, SaaS, hosting, SLAs, migrations, or managed services — even in a status update or project deck — add digital_services.
 When in doubt, ADD the domain vertical. Missing a relevant vertical is worse than including an extra one.
 
 {file_type_hint}

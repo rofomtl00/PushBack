@@ -75,7 +75,7 @@ def _detect_verticals(text: str) -> str:
         "business_analyst": ["business case", "strategy", "roi", "market size", "stakeholder", "kpi"],
         "quant_research": ["backtest", "sharpe", "alpha", "trading strategy", "p-value", "overfitting"],
         "business_writing": ["memo", "proposal", "executive summary", "board deck", "email"],
-        "digital_services": ["rfp", "vendor", "sow", "crm", "managed services", "procurement", "platform build"],
+        "digital_services": ["rfp", "vendor", "sow", "crm", "managed services", "procurement", "platform build", "ecommerce", "website", "database", "migration", "integration", "saas", "hosting", "maintenance contract", "sla"],
     }
 
     for vid, keywords in signals.items():
