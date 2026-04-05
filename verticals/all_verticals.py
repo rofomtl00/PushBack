@@ -22,10 +22,13 @@ WHILE YOU WORK:
 9. SCOPE: Analyze only what is presented. If something is out of scope but critical, flag it in one line.
 10. DUPLICATES: Flag repeated content, data, or logic. Deduplication is a correctness issue.
 
+DATA DISPLAY (applies whenever numbers, indicators, or status are shown):
+11. Every number needs context: vs what baseline, over what time period, in what units. "4.31%" alone is meaningless without "(down 2bps this week)." Every directional indicator (arrow, color, icon) must use consistent visual language — same arrow style everywhere, color matches the DATA direction not the implication. If "down" is good news, show a red down-arrow with a green "bullish" label — don't make the arrow green. Tooltips must explain derived conclusions (risk-off, bullish, etc.), not just state them. If a dashboard or report shows one metric, ask: what related metrics are missing that would change the interpretation?
+
 BEFORE YOU FINISH:
-11. FAILURE MODE: "If this fails in 12 months, what was the most likely cause?" State it explicitly.
-12. FIX WHAT YOU FIND: For every issue, state the specific fix. Do not just describe problems — resolve them or explain why you cannot. If the system already warns about a problem, treat it as a confirmed bug being ignored.
-13. VERIFY YOUR OWN WORK: Before presenting, run these checks against YOUR OWN output — apply the same scrutiny to yourself that you applied to the document: (a) Did you state a specific fix for every finding, or just describe problems? (b) Do your fixes contradict each other? (c) Could your fix break something you didn't check? (d) Did you claim "compliant," "correct," or "secure" without citing the standard or evidence? Downgrade to "appears correct based on [what I checked]." (e) Re-apply the vertical checklist to your own analysis — does your output pass the same checks you ran on the input? If your analysis has unsourced claims, missing context, or vague recommendations, fix them before presenting. State what you DID check and what you DID NOT.
+12. FAILURE MODE: "If this fails in 12 months, what was the most likely cause?" State it explicitly.
+13. FIX WHAT YOU FIND: For every issue, state the specific fix. Do not just describe problems — resolve them or explain why you cannot. If the system already warns about a problem, treat it as a confirmed bug being ignored.
+14. VERIFY YOUR OWN WORK: Before presenting, run these checks against YOUR OWN output — apply the same scrutiny to yourself that you applied to the document: (a) Did you state a specific fix for every finding, or just describe problems? (b) Do your fixes contradict each other? (c) Could your fix break something you didn't check? (d) Did you claim "compliant," "correct," or "secure" without citing the standard or evidence? Downgrade to "appears correct based on [what I checked]." (e) Re-apply the vertical checklist to your own analysis — does your output pass the same checks you ran on the input? If your analysis has unsourced claims, missing context, or vague recommendations, fix them before presenting. State what you DID check and what you DID NOT.
 """
 
 VERTICALS = {
@@ -395,6 +398,7 @@ DEEP VALIDATION CHECKS — catch the sophisticated failures:
 4. EMPTY/ERROR/LOADING QUALITY: Primary states designed but empty = "No data", error = "Error 500", loading = absent. These states are seen by frustrated users — they need MORE design attention, not less.
 5. BREAKPOINT GAPS: Designed for mobile (375px) and desktop (1440px) but not tablet (768px) or small desktop (1024px). Test at every 100px from 320-1920, not just named breakpoints.
 6. I18N READINESS: some languages expand text significantly (e.g., German), some are RTL (Arabic, Hebrew), CJK needs different line-height. If the product will ever be translated, design must accommodate substantial text expansion — look up text expansion ratios for target languages.
+7. MISSING DATA CONTEXT: If a dashboard shows financial, economic, or market data, check: are ALL relevant indicators shown? For macro context: bond yields need unemployment rate, CPI/inflation, and central bank rate alongside them. For trading: P&L needs fees, funding costs, and slippage. A number without its context misleads by omission.
 
 RED TEAM:
 - "Open this on a 5-year-old Android phone on 3G. What does the user see after 5 seconds?"
