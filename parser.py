@@ -509,10 +509,73 @@ def _extract_claims(files: list) -> str:
     for filename, claims in claims_by_file.items():
         lines.append(f"**{filename}:**")
         for c in claims:
-            # Clean up whitespace
             clean = ' '.join(c.split())
             lines.append(f"  - {clean}")
         lines.append("")
+
+    # Cross-file number matching — find the same numbers appearing in multiple files
+    if len(claims_by_file) > 1:
+        import re as _re
+        number_locations = {}  # number_str -> [(filename, context)]
+        for filename, claims in claims_by_file.items():
+            for c in claims:
+                # Extract dollar amounts
+                for m in _re.findall(r'\$[\d,.]+[KMBkmb]?(?:\s*(?:million|billion|thousand))?', c, _re.IGNORECASE):
+                    key = m.strip().upper().replace(',', '')
+                    if key not in number_locations:
+                        number_locations[key] = []
+                    number_locations[key].append((filename, c.strip()[:80]))
+                # Extract percentages
+                for m in _re.findall(r'\d+(?:\.\d+)?%', c):
+                    if m not in number_locations:
+                        number_locations[m] = []
+                    number_locations[m].append((filename, c.strip()[:80]))
+
+        # Find numbers that appear in multiple files — potential inconsistencies
+        multi_file_numbers = {k: v for k, v in number_locations.items() if len(set(f for f, _ in v)) > 1}
+        if multi_file_numbers:
+            lines.append("### Numbers Appearing in Multiple Files (verify consistency)")
+            for num, locations in sorted(multi_file_numbers.items(), key=lambda x: -len(x[1])):
+                files_with = list(set(f for f, _ in locations))
+                lines.append(f"- **{num}** found in: {', '.join(files_with)}")
+                for fname, ctx in locations[:3]:
+                    lines.append(f"  - {fname}: \"{ctx}\"")
+            lines.append("")
+
+        # Find similar-but-different numbers (same magnitude, different values) across files
+        all_dollars = {}
+        for filename, claims in claims_by_file.items():
+            for c in claims:
+                for m in _re.findall(r'\$([\d,.]+)', c):
+                    try:
+                        val = float(m.replace(',', ''))
+                        if val > 0:
+                            if val not in all_dollars:
+                                all_dollars[val] = []
+                            all_dollars[val].append((filename, c.strip()[:60]))
+                    except ValueError:
+                        pass
+
+        # Flag numbers that are close but not identical across files (within 20%)
+        potential_conflicts = []
+        dollar_vals = sorted(all_dollars.keys())
+        for i, v1 in enumerate(dollar_vals):
+            for v2 in dollar_vals[i+1:]:
+                if v2 > v1 * 1.5:
+                    break
+                if v1 * 0.8 <= v2 <= v1 * 1.2 and v1 != v2:
+                    files1 = set(f for f, _ in all_dollars[v1])
+                    files2 = set(f for f, _ in all_dollars[v2])
+                    if files1 != files2:
+                        potential_conflicts.append((v1, v2, all_dollars[v1][0], all_dollars[v2][0]))
+
+        if potential_conflicts:
+            lines.append("### ⚠ Potential Number Conflicts (similar values in different files)")
+            for v1, v2, (f1, c1), (f2, c2) in potential_conflicts[:10]:
+                lines.append(f"- **${v1:,.2f}** vs **${v2:,.2f}** — {f1} vs {f2}")
+                lines.append(f"  - \"{c1}\"")
+                lines.append(f"  - \"{c2}\"")
+            lines.append("")
 
     return "\n".join(lines)
 
