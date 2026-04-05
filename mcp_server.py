@@ -62,20 +62,20 @@ def _detect_verticals(text: str) -> str:
     matched = []
 
     signals = {
-        "developer": ["api", "database", "deploy", "git", "test coverage", "ci/cd", "docker", "backend", "frontend", "code", "architecture", "server", "framework"],
-        "ecommerce_platform": ["ecommerce", "shopify", "cart", "checkout", "retail", "pos"],
-        "vfx_film": ["vfx", "shot", "render", "production", "animation", "studio"],
-        "corporate_insurance": ["insurance", "premium", "d&o", "liability", "broker"],
-        "project_management": ["project", "agile", "scrum", "milestone", "sprint", "gantt"],
-        "design_creative": ["design", "typography", "color", "layout", "responsive", "ui", "ux", "chart", "slide", "presentation", "deck"],
-        "finance_accounting": ["revenue", "budget", "tax", "financial", "profit", "balance sheet"],
-        "cybersecurity": ["security", "vulnerability", "firewall", "mfa", "breach", "encryption", "gdpr", "compliance", "privacy", "data protection", "cookie", "authentication"],
-        "legal_contracts": ["contract", "clause", "indemnification", "liability", "nda", "ip ownership"],
-        "hr_people": ["hiring", "salary", "turnover", "employee", "recruitment", "hr"],
-        "business_analyst": ["business case", "strategy", "roi", "market size", "stakeholder", "kpi", "competitive", "analysis", "recommendation", "due diligence"],
-        "quant_research": ["backtest", "sharpe", "alpha", "trading strategy", "p-value", "overfitting"],
-        "business_writing": ["memo", "proposal", "executive summary", "board deck", "email", "presentation", "bid", "pitch", "slide"],
-        "digital_services": ["rfp", "vendor", "sow", "crm", "managed services", "procurement", "platform build", "ecommerce", "website", "database", "migration", "integration", "saas", "hosting", "maintenance contract", "sla"],
+        "developer": ["api", "database", "deploy", "git", "test coverage", "ci/cd", "docker", "backend", "frontend", "code", "architecture", "server", "framework", "microservice", "kubernetes", "python", "javascript", "react", "node", "sql", "rest", "graphql", "devops", "terraform", "aws", "azure", "gcp", "pipeline", "repository", "pull request"],
+        "ecommerce_platform": ["ecommerce", "shopify", "cart", "checkout", "retail", "pos", "inventory", "fulfillment", "payment gateway", "shipping", "returns", "conversion rate", "abandoned cart", "product catalog", "order management", "woocommerce", "magento", "bigcommerce", "stripe", "3pl"],
+        "vfx_film": ["vfx", "shot", "render", "production", "animation", "studio", "compositing", "rotoscoping", "color grading", "matte painting", "cgi", "nuke", "houdini", "maya", "unreal", "previz", "editorial", "dailies", "deliverables", "dcp", "imf"],
+        "corporate_insurance": ["insurance", "premium", "d&o", "liability", "broker", "underwriting", "claims", "deductible", "coverage", "exclusion", "endorsement", "policyholder", "sublimit", "renewal", "certificate of insurance", "loss run", "workers comp", "cyber insurance", "e&o"],
+        "project_management": ["project", "agile", "scrum", "milestone", "sprint", "gantt", "timeline", "resource", "deliverable", "dependency", "risk register", "budget", "scope", "stakeholder", "kanban", "burndown", "retrospective", "backlog", "epic", "user story"],
+        "design_creative": ["design", "typography", "color", "layout", "responsive", "ui", "ux", "chart", "slide", "presentation", "deck", "wireframe", "prototype", "figma", "sketch", "accessibility", "wcag", "mockup", "brand", "style guide", "icon", "animation", "dark mode", "mobile"],
+        "finance_accounting": ["revenue", "budget", "tax", "financial", "profit", "balance sheet", "income statement", "cash flow", "audit", "ledger", "journal entry", "depreciation", "amortization", "accounts receivable", "accounts payable", "reconciliation", "ebitda", "margin", "forecast", "variance", "accrual", "invoice"],
+        "cybersecurity": ["security", "vulnerability", "firewall", "mfa", "breach", "encryption", "gdpr", "compliance", "privacy", "data protection", "cookie", "authentication", "penetration test", "soc 2", "iso 27001", "zero trust", "ransomware", "phishing", "access control", "incident response", "siem", "endpoint"],
+        "legal_contracts": ["contract", "clause", "indemnification", "liability", "nda", "ip ownership", "governing law", "dispute resolution", "termination", "confidentiality", "non-compete", "assignment", "force majeure", "warranty", "representation", "severability", "arbitration", "msa", "amendment", "breach"],
+        "hr_people": ["hiring", "salary", "turnover", "employee", "recruitment", "hr", "onboarding", "performance review", "compensation", "benefits", "termination", "severance", "handbook", "leave", "diversity", "equity", "inclusion", "contractor", "payroll", "retention", "promotion", "disciplinary"],
+        "business_analyst": ["business case", "strategy", "roi", "market size", "stakeholder", "kpi", "competitive", "analysis", "recommendation", "due diligence", "swot", "gap analysis", "requirements", "feasibility", "benchmark", "process improvement", "change management", "cost benefit", "use case", "workflow"],
+        "quant_research": ["backtest", "sharpe", "alpha", "trading strategy", "p-value", "overfitting", "monte carlo", "regression", "correlation", "volatility", "drawdown", "portfolio", "optimization", "risk-adjusted", "out-of-sample", "walk-forward", "kelly", "statistical significance", "hypothesis", "variance"],
+        "business_writing": ["memo", "proposal", "executive summary", "board deck", "email", "presentation", "bid", "pitch", "slide", "report", "brief", "white paper", "newsletter", "announcement", "agenda", "minutes", "recommendation", "status update", "stakeholder communication"],
+        "digital_services": ["rfp", "vendor", "sow", "crm", "managed services", "procurement", "platform build", "ecommerce", "website", "database", "migration", "integration", "saas", "hosting", "maintenance contract", "sla", "implementation", "go-live", "cutover", "onboarding", "training", "support", "helpdesk", "ticketing", "uptime", "disaster recovery"],
     }
 
     for vid, keywords in signals.items():
