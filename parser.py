@@ -46,9 +46,30 @@ def parse_file(filepath: str) -> dict:
             with open(filepath, "r", errors="ignore") as f:
                 result["text"] = f.read(100000)
         elif ext in (".png", ".jpg", ".jpeg", ".gif", ".webp", ".tiff", ".bmp", ".svg"):
-            result["text"] = f"[Image: {name}]"
             result["metadata"]["type"] = "image"
             result["metadata"]["format"] = ext
+            # Try to get image dimensions
+            try:
+                from PIL import Image
+                img = Image.open(filepath)
+                result["metadata"]["dimensions"] = f"{img.width}x{img.height}"
+            except Exception:
+                pass
+            # Try OCR text extraction
+            image_text = ""
+            try:
+                from PIL import Image
+                import pytesseract
+                img = Image.open(filepath)
+                image_text = pytesseract.image_to_string(img).strip()
+            except ImportError:
+                image_text = "[Image analysis requires: pip install pytesseract Pillow]"
+            except Exception as e:
+                image_text = f"[Could not read image: {e}]"
+            if image_text and image_text != "[Image analysis requires: pip install pytesseract Pillow]":
+                result["text"] = f"[Image: {name}]\nExtracted text:\n{image_text[:5000]}"
+            else:
+                result["text"] = f"[Image: {name}] {image_text}"
         # Video files — can't read content but log metadata
         elif ext in (".mp4", ".mov", ".avi", ".mkv", ".webm", ".flv", ".wmv", ".m4v",
                       ".prproj", ".drp", ".fcpxml", ".aep"):
@@ -180,6 +201,56 @@ def _parse_xlsx(filepath):
             sheets.append({"sheet": ws.title, "rows": len(rows)})
             tables.append(rows)
 
+    # Formula extraction: two-pass approach
+    formulas_found = []
+    try:
+        wb_formulas = load_workbook(filepath, data_only=False)
+        wb_values = load_workbook(filepath, data_only=True)
+        all_sheet_names = set(wb_formulas.sheetnames)
+
+        for sheet_name in wb_formulas.sheetnames[:10]:
+            ws_f = wb_formulas[sheet_name]
+            ws_v = wb_values[sheet_name]
+            for row in ws_f.iter_rows(max_row=500):
+                for cell in row:
+                    if cell.value and str(cell.value).startswith('='):
+                        if len(formulas_found) >= 100:
+                            break
+                        formula_text = str(cell.value)
+                        val_cell = ws_v[cell.coordinate]
+                        computed = str(val_cell.value) if val_cell.value is not None else "N/A"
+
+                        # Flag potential issues
+                        issues = []
+                        import re
+                        # Check for references to non-existent sheets
+                        sheet_refs = re.findall(r"'?([A-Za-z0-9_ ]+)'?!", formula_text)
+                        for ref in sheet_refs:
+                            if ref not in all_sheet_names:
+                                issues.append(f"references non-existent sheet '{ref}'")
+                        # Flag hardcoded numbers mixed with cell refs
+                        has_cell_ref = bool(re.search(r'[A-Z]+\d+', formula_text[1:]))
+                        hardcoded_nums = re.findall(r'(?<![A-Z])(\d{2,}(?:\.\d+)?)(?!\d*[A-Z])', formula_text[1:])
+                        if has_cell_ref and hardcoded_nums:
+                            issues.append(f"hardcoded number(s) {', '.join(hardcoded_nums[:3])} may belong in cells")
+                        # Basic circular reference hint (self-reference)
+                        if cell.coordinate in formula_text:
+                            issues.append("possible circular reference (self-referencing)")
+
+                        formulas_found.append({
+                            "sheet": sheet_name,
+                            "cell": cell.coordinate,
+                            "formula": formula_text,
+                            "value": computed,
+                            "issues": issues,
+                        })
+                if len(formulas_found) >= 100:
+                    break
+        wb_formulas.close()
+        wb_values.close()
+    except Exception:
+        pass  # Formula extraction is best-effort; don't break main parsing
+
     # Build text summary
     text_parts = []
     for i, table in enumerate(tables):
@@ -188,11 +259,29 @@ def _parse_xlsx(filepath):
         for row in table[:100]:  # Max 100 rows per sheet
             text_parts.append(" | ".join(row))
 
-    return {
+    # Append formula summary
+    if formulas_found:
+        formula_sheets = set(f["sheet"] for f in formulas_found)
+        text_parts.append("")
+        text_parts.append("## Formulas")
+        text_parts.append(f"Formulas found: {len(formulas_found)} formulas across {len(formula_sheets)} sheet(s)")
+        text_parts.append("")
+        for entry in formulas_found[:20]:
+            line = f"  [{entry['sheet']}!{entry['cell']}] {entry['formula']} => {entry['value']}"
+            if entry.get("issues"):
+                line += f"  ** {'; '.join(entry['issues'])}"
+            text_parts.append(line)
+        if len(formulas_found) > 20:
+            text_parts.append(f"  ... and {len(formulas_found) - 20} more formulas")
+
+    result = {
         "text": "\n".join(text_parts),
         "tables": tables,
         "metadata": {"sheets": [s["sheet"] for s in sheets]},
     }
+    if formulas_found:
+        result["formulas"] = formulas_found
+    return result
 
 
 def _parse_pptx(filepath):
@@ -428,6 +517,128 @@ def _extract_claims(files: list) -> str:
     return "\n".join(lines)
 
 
+def _analyze_code_relationships(files: list) -> str:
+    """Analyze relationships between code files."""
+    code_exts = {'.py', '.js', '.ts', '.jsx', '.tsx', '.java', '.go', '.rs', '.rb', '.php', '.c', '.cpp', '.h', '.cs', '.swift', '.kt'}
+
+    code_files = [f for f in files if any(f['filename'].endswith(ext) for ext in code_exts)]
+    if not code_files:
+        return ""
+
+    imports = {}  # filename -> [imported modules]
+    definitions = {}  # filename -> [function/class names]
+    project_type = "Unknown"
+
+    # Detect project type
+    filenames = {f['filename'] for f in files}
+    if any('package.json' in fn for fn in filenames): project_type = "Node.js"
+    if any('requirements.txt' in fn for fn in filenames): project_type = "Python"
+    if any('Cargo.toml' in fn for fn in filenames): project_type = "Rust"
+    if any('go.mod' in fn for fn in filenames): project_type = "Go"
+    if any('pom.xml' in fn for fn in filenames): project_type = "Java (Maven)"
+    if any('Gemfile' in fn for fn in filenames): project_type = "Ruby"
+    if any('Dockerfile' in fn for fn in filenames): project_type += " + Docker"
+    if any('docker-compose' in fn for fn in filenames): project_type += " + Docker Compose"
+
+    # Detect framework
+    for f in files:
+        text = f.get('text', '')[:2000]
+        if 'from flask' in text.lower() or 'import flask' in text.lower(): project_type += " + Flask"
+        if 'from django' in text.lower(): project_type += " + Django"
+        if 'import express' in text.lower() or 'require.*express' in text.lower(): project_type += " + Express"
+        if 'import react' in text.lower(): project_type += " + React"
+
+    import re
+
+    for f in code_files:
+        fname = f['filename']
+        text = f.get('text', '')
+
+        # Extract imports
+        file_imports = []
+        # Python: from X import Y, import X
+        for m in re.findall(r'^(?:from\s+(\S+)\s+import|import\s+(\S+))', text, re.MULTILINE):
+            mod = m[0] or m[1]
+            if mod: file_imports.append(mod.split('.')[0])
+        # JS/TS: import X from 'Y', require('Y')
+        for m in re.findall(r"(?:import\s+.*?from\s+['\"](.+?)['\"]|require\s*\(\s*['\"](.+?)['\"])", text):
+            mod = m[0] or m[1]
+            if mod: file_imports.append(mod.split('/')[0].lstrip('.'))
+        # Go: import "X"
+        for m in re.findall(r'import\s+["\'](.+?)["\']', text):
+            file_imports.append(m.split('/')[-1])
+
+        imports[fname] = list(set(file_imports))
+
+        # Extract definitions
+        file_defs = []
+        # Python: def X, class X
+        for m in re.findall(r'^(?:def|class)\s+(\w+)', text, re.MULTILINE):
+            file_defs.append(m)
+        # JS/TS: function X, const X = (...) =>, class X, export function X
+        for m in re.findall(r'^(?:export\s+)?(?:function|class|const|let|var)\s+(\w+)', text, re.MULTILINE):
+            file_defs.append(m)
+        # Go: func X
+        for m in re.findall(r'^func\s+(?:\([^)]*\)\s+)?(\w+)', text, re.MULTILINE):
+            file_defs.append(m)
+
+        definitions[fname] = file_defs[:50]  # Cap at 50 per file
+
+    # Build cross-file reference map
+    all_defs = {}  # name -> filename
+    for fname, defs in definitions.items():
+        for d in defs:
+            if len(d) > 2:  # Skip very short names
+                all_defs[d] = fname
+
+    cross_refs = {}  # filename -> [(called_function, defined_in)]
+    for f in code_files:
+        fname = f['filename']
+        text = f.get('text', '')
+        refs = []
+        for func_name, defined_in in all_defs.items():
+            if defined_in != fname and func_name in text:
+                refs.append((func_name, defined_in))
+        if refs:
+            cross_refs[fname] = refs[:20]  # Cap
+
+    # Build output
+    lines = [f"## Code Architecture ({project_type})\n"]
+    lines.append(f"**{len(code_files)} code files** across {len(set(f['filename'].split('/')[0] for f in code_files if '/' in f['filename']))} directories\n")
+
+    # Dependency graph
+    if imports:
+        lines.append("### Dependencies (who imports whom)")
+        for fname, imps in sorted(imports.items()):
+            if imps:
+                # Check if any import matches another uploaded file
+                internal = [i for i in imps if any(i in other['filename'] for other in code_files)]
+                external = [i for i in imps if i not in internal]
+                if internal:
+                    lines.append(f"- **{fname}** \u2192 internal: {', '.join(internal)}")
+                if external and len(external) <= 10:
+                    lines.append(f"  external: {', '.join(external[:10])}")
+        lines.append("")
+
+    # Key definitions
+    if definitions:
+        lines.append("### Key Definitions (functions/classes per file)")
+        for fname, defs in sorted(definitions.items()):
+            if defs:
+                lines.append(f"- **{fname}**: {', '.join(defs[:10])}" + (f" (+{len(defs)-10} more)" if len(defs) > 10 else ""))
+        lines.append("")
+
+    # Cross-file calls
+    if cross_refs:
+        lines.append("### Cross-File References (who calls what from where)")
+        for fname, refs in sorted(cross_refs.items()):
+            ref_strs = [f"`{fn}` (from {src})" for fn, src in refs[:5]]
+            lines.append(f"- **{fname}** uses: {', '.join(ref_strs)}")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
 def parse_folder(filepaths: list) -> dict:
     """Parse multiple files and return combined context with smart prioritization."""
     results = []
@@ -441,6 +652,11 @@ def parse_folder(filepaths: list) -> dict:
 
     combined_text = _smart_truncate(file_texts, max_chars=100000)
     claims_map = _extract_claims(results)
+    code_architecture = _analyze_code_relationships(results)
+
+    # Prepend code architecture so the AI sees structure before raw code
+    if code_architecture:
+        combined_text = code_architecture + "\n\n" + combined_text
 
     return {
         "files": results,
@@ -448,5 +664,6 @@ def parse_folder(filepaths: list) -> dict:
         "total_chars": len(combined_text),
         "combined_text": combined_text,
         "claims_map": claims_map,
+        "code_architecture": code_architecture,
         "errors": [r for r in results if r.get("error")],
     }
