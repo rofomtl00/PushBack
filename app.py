@@ -1067,6 +1067,11 @@ def analyze_url():
     clean = re.sub(r"</(p|div|h[1-6]|li|tr)>", "\n", clean)
     clean = re.sub(r"<[^>]+>", " ", clean)
     clean = re.sub(r"\s+", " ", clean).strip()
+    # Detect login/auth pages — content is useless if we hit a login wall
+    clean_lower = clean.lower()[:2000]
+    login_signals = ["sign in", "log in", "login", "enter your password", "authenticate", "sso", "oauth", "unauthorized"]
+    if len(clean) < 500 and any(sig in clean_lower for sig in login_signals):
+        return jsonify({"ok": False, "error": "This page requires authentication. Copy the page content and paste it using file upload instead."}), 400
     # Limit
     if len(clean) > 100_000:
         clean = clean[:100_000] + "\n[Content truncated]"

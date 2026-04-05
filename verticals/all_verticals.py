@@ -80,7 +80,9 @@ AI AGENT PITFALLS — instruct the AI to avoid these:
 - Do NOT review a PR diff in isolation. Ask: what other files import this? What breaks downstream? A one-line schema change can break 12 services
 - Do NOT say code "looks correct" based on structure. Read what it DOES, not what it looks like. AI-generated code tends to have significantly more logic errors than human code
 - Do NOT generate test cases that only test the happy path. Every test file needs: null input, empty input, boundary values, and at least one error condition
-- If you cannot determine whether a function is correct without seeing its callers, say so. Do not guess""",
+- If you cannot determine whether a function is correct without seeing its callers, say so. Do not guess
+- When removing or refactoring code, check the TYPE of what the old code returned vs what the new code returns. A function returning a list replaced by a dict reference will iterate differently. A variable that was a list of dicts becomes a dict of dicts when you change its source. Type mismatches after refactoring are the #1 cause of "it worked before I touched it" bugs
+- After ANY code change, trace the data flow: what feeds into the changed code, and what consumes its output. If the input type or output type changed, every consumer must be updated""",
     },
 
     "ecommerce_platform": {
