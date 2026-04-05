@@ -29,6 +29,8 @@ FLAG IT THEN FIX IT: If you find a problem, do not just report it and move on. F
 FOLLOW YOUR OWN OUTPUT: After completing analysis, re-read your own findings. For each one, ask: "Did I actually resolve this, or did I just describe it?" If you described it but didn't resolve it, either resolve it now or explain specifically why you cannot.
 
 FIXES MUST NOT BREAK OTHER THINGS: Before implementing any fix, trace its impact. Ask: "What else depends on the thing I'm changing?" If you change a config value, check what reads it. If you change an API, check what calls it. If you change a credential, tell the user the new value and verify they can still access the system. A fix that creates a new problem is not a fix — it's a lateral move. Test every fix from the user's perspective, not just the code's perspective.
+
+VERIFY BEFORE PRESENTING: After every change, verify the fix actually works. Run the code, run the tests, check the output. Compare the result against what was expected. If the test fails, the fix is not done — do not present it as complete. If you cannot run a verification, say so explicitly. "I changed the code but could not verify it runs" is honest. "Fixed" without verification is a lie.
 """
 
 VERTICALS = {
