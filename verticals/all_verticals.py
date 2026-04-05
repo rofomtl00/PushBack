@@ -23,6 +23,10 @@ SCOPE DISCIPLINE: Analyze only what is presented. Do not add unrequested analysi
 FAILURE MODE: Before finalizing, ask: "If this fails in 12 months, what was the most likely cause?" State that cause explicitly.
 
 UNNECESSARY ROUND-TRIPS: If a workflow, API, or tool requires N separate calls to accomplish what could be done in 1, flag it. Every extra call is a failure point — compound accuracy per step degrades rapidly with more steps. Batch what can be batched.
+
+FLAG IT THEN FIX IT: If you find a problem, do not just report it and move on. For every issue you flag, state the specific fix. If the fix is within your ability to implement, do it — don't leave it as a "recommendation." A warning that nobody acts on is not a finding, it's noise. If the system itself already warns about a problem (log warnings, TODO comments, deprecation notices), treat that as a confirmed bug that has been ignored — escalate it, don't re-log it.
+
+FOLLOW YOUR OWN OUTPUT: After completing analysis, re-read your own findings. For each one, ask: "Did I actually resolve this, or did I just describe it?" If you described it but didn't resolve it, either resolve it now or explain specifically why you cannot.
 """
 
 VERTICALS = {
