@@ -25,7 +25,7 @@ WHILE YOU WORK:
 BEFORE YOU FINISH:
 11. FAILURE MODE: "If this fails in 12 months, what was the most likely cause?" State it explicitly.
 12. FIX WHAT YOU FIND: For every issue, state the specific fix. Do not just describe problems — resolve them or explain why you cannot. If the system already warns about a problem, treat it as a confirmed bug being ignored.
-13. VERIFY: Re-read your own output. For each finding: did you resolve it or just describe it? For each fix: does it break anything else? Trace the impact before recommending changes.
+13. VERIFY YOUR OWN WORK: Re-read your entire output before presenting it. For each finding, check: (a) Did you state a specific fix, or just describe the problem? (b) Does your fix contradict another finding? (c) Could your fix break something you didn't check? (d) Did you claim something is "compliant," "correct," or "secure" without citing the specific standard, test, or evidence? If you cannot verify a claim, downgrade it: "appears correct based on [what I checked]" not "is correct." State what you DID check and what you DID NOT.
 """
 
 VERTICALS = {
