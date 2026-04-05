@@ -19,12 +19,37 @@ except ImportError:
 
 from parser import parse_file, parse_folder
 
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 sessions = {}
 MAX_SESSIONS = 500
+
+
+@app.before_request
+def check_csrf():
+    if request.method == "POST":
+        origin = request.headers.get("Origin", "")
+        if origin and not origin.endswith(request.host):
+            return jsonify({"error": "Invalid origin"}), 403
+
+
+@app.after_request
+def security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'"
+    )
+    return response
+
 
 # ═══════════════════════════════════════════════
 # SUPABASE — persistent learning storage
@@ -77,7 +102,7 @@ def _save_learning(learning: dict):
         )
         urllib.request.urlopen(req, timeout=5)
     except Exception:
-        pass
+        pass  # Non-critical: learning storage is optional
 
 
 def _try_confirm_existing(industry: str, user_text: str):
@@ -138,7 +163,7 @@ def _try_confirm_existing(industry: str, user_text: str):
             urllib.request.urlopen(patch, timeout=5)
             return
     except Exception:
-        pass
+        pass  # Non-critical: learning confirmation is optional
 
 
 def _extract_learnings(session: dict):
@@ -537,7 +562,7 @@ VERTICALS: <comma-separated vertical_ids, or none>"""
                         vertical_ids.append(vid)
         doc_type = {"type": label.lower().replace(" ", "_"), "label": label}
     except Exception:
-        doc_type = {"type": "business", "label": "Business Analysis"}
+        doc_type = {"type": "business", "label": "Business Analysis"}  # Fallback: AI classification failed
         vertical_ids = []
 
     # Load lightweight checklists — all combined ~12K chars. No multi-pass needed.
@@ -695,7 +720,7 @@ def upload():
     try:
         shutil.rmtree(session_dir)
     except Exception:
-        pass
+        pass  # Non-critical: temp upload cleanup best-effort
 
     questions = []  # Let the AI generate relevant questions, not keyword matching
 
@@ -709,7 +734,7 @@ def upload():
             try:
                 _extract_learnings(sessions[old_sid])
             except Exception:
-                pass
+                pass  # Non-critical: learning extraction is best-effort
             del sessions[old_sid]
 
     sessions[sid] = {
@@ -765,7 +790,7 @@ def analyze_docs():
         try:
             _extract_learnings(s)
         except Exception:
-            pass
+            pass  # Non-critical: learning extraction is best-effort
 
     # Cache: skip AI call if content hasn't changed (re-analyze same files)
     import hashlib
@@ -997,12 +1022,13 @@ def activate_license():
 def ls_webhook():
     """LemonSqueezy webhook — auto-activate keys on purchase."""
     import hmac, hashlib
-    if LEMON_SQUEEZY_WEBHOOK_SECRET:
-        sig = request.headers.get("X-Signature", "")
-        body_bytes = request.get_data()
-        expected = hmac.new(LEMON_SQUEEZY_WEBHOOK_SECRET.encode(), body_bytes, hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(sig, expected):
-            return "Invalid signature", 403
+    if not LEMON_SQUEEZY_WEBHOOK_SECRET:
+        return jsonify({"error": "Webhook not configured"}), 503
+    sig = request.headers.get("X-Signature", "")
+    body_bytes = request.get_data()
+    expected = hmac.new(LEMON_SQUEEZY_WEBHOOK_SECRET.encode(), body_bytes, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(sig, expected):
+        return "Invalid signature", 403
     data = request.get_json() or {}
     event = data.get("meta", {}).get("event_name", "")
     if event == "license_key_created":
@@ -1091,7 +1117,7 @@ def analyze_url():
             try:
                 _extract_learnings(sessions[old_sid])
             except Exception:
-                pass
+                pass  # Non-critical: learning extraction is best-effort
             del sessions[old_sid]
 
     sessions[sid] = {
@@ -1368,7 +1394,7 @@ HTML = """<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PushBack</title>
 <style>
 :root {
@@ -1597,7 +1623,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
           <div style="font-size:32px;font-weight:700;color:var(--text)">$49.99<span style="font-size:14px;font-weight:400;color:var(--text3)">/mo</span></div>
           <div style="font-size:13px;color:var(--text2);margin:8px 0 4px">100 analyses / month</div>
           <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Full-depth AI · 50 follow-ups · Teams</div>
-          <button class="btn btn-primary btn-sm" onclick="openCheckout('enterprise')" class="btn btn-dark btn-sm" style="width:100%">Get Enterprise</button>
+          <button onclick="openCheckout('enterprise')" class="btn btn-dark btn-sm" style="width:100%">Get Enterprise</button>
         </div>
       </div>
     </div>
@@ -1826,7 +1852,7 @@ async function doChat() {
   if (data.ok) {
     msgs.innerHTML += '<div class="chat-msg chat-ai">' + renderMarkdown(data.response, false) + '</div>';
   } else {
-    msgs.innerHTML += '<div class="chat-msg chat-ai" style="color:var(--red)">' + (data.error || 'Error') + '</div>';
+    msgs.innerHTML += '<div class="chat-msg chat-ai" style="color:var(--red)">' + esc(data.error || 'Error') + '</div>';
   }
   msgs.scrollTop = msgs.scrollHeight;
 }
@@ -1967,7 +1993,9 @@ function toast(msg) {
 }
 
 function renderInline(text) {
-  return text
+  // Escape HTML first to prevent XSS, then apply markdown formatting
+  let safe = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return safe
     .replace(/^### (.*$)/gm, '<h3>$1</h3>')
     .replace(/^## (.*$)/gm, '<h2>$1</h2>')
     .replace(/^# (.*$)/gm, '<h1>$1</h1>')
