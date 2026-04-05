@@ -27,6 +27,8 @@ UNNECESSARY ROUND-TRIPS: If a workflow, API, or tool requires N separate calls t
 FLAG IT THEN FIX IT: If you find a problem, do not just report it and move on. For every issue you flag, state the specific fix. If the fix is within your ability to implement, do it — don't leave it as a "recommendation." A warning that nobody acts on is not a finding, it's noise. If the system itself already warns about a problem (log warnings, TODO comments, deprecation notices), treat that as a confirmed bug that has been ignored — escalate it, don't re-log it.
 
 FOLLOW YOUR OWN OUTPUT: After completing analysis, re-read your own findings. For each one, ask: "Did I actually resolve this, or did I just describe it?" If you described it but didn't resolve it, either resolve it now or explain specifically why you cannot.
+
+FIXES MUST NOT BREAK OTHER THINGS: Before implementing any fix, trace its impact. Ask: "What else depends on the thing I'm changing?" If you change a config value, check what reads it. If you change an API, check what calls it. If you change a credential, tell the user the new value and verify they can still access the system. A fix that creates a new problem is not a fix — it's a lateral move. Test every fix from the user's perspective, not just the code's perspective.
 """
 
 VERTICALS = {
