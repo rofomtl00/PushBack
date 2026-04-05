@@ -414,7 +414,7 @@ def _call_ai(system_prompt: str, user_message: str, history: list = None, tier: 
 # ═══════════════════════════════════════════════
 
 # Lightweight verticals — checklists, not encyclopedias. AI fills in facts from its own knowledge.
-from verticals.all_verticals import VERTICALS as _VERT_DATA, get_vertical
+from verticals.all_verticals import VERTICALS as _VERT_DATA, get_vertical, get_verticals_combined
 VERTICALS = {vid: (None, v["label"]) for vid, v in _VERT_DATA.items()}
 
 def _ext_to_group(ext: str) -> str:
@@ -565,10 +565,8 @@ VERTICALS: <comma-separated vertical_ids, or none>"""
         doc_type = {"type": "business", "label": "Business Analysis"}  # Fallback: AI classification failed
         vertical_ids = []
 
-    # Load lightweight checklists — all combined ~12K chars. No multi-pass needed.
-    vertical_context = ""
-    for vertical_id in vertical_ids:
-        vertical_context += get_vertical(vertical_id)
+    # Load lightweight checklists — universal rules once, not per vertical
+    vertical_context = get_verticals_combined(vertical_ids) if vertical_ids else ""
 
     return doc_type, vertical_context
 

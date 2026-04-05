@@ -18,7 +18,7 @@ import urllib.parse
 from mcp.server.fastmcp import FastMCP
 
 # Import PushBack's lightweight verticals
-from verticals.all_verticals import VERTICALS, get_vertical
+from verticals.all_verticals import VERTICALS, get_vertical, get_verticals_combined
 
 mcp = FastMCP("pushback", instructions="""
 PushBack gives you the feedback your team won't give you.
@@ -79,10 +79,8 @@ def _detect_verticals(text: str) -> str:
         if hits >= 2:
             matched.append(vid)
 
-    context = ""
-    for vid in matched[:3]:  # Max 3 verticals
-        context += get_vertical(vid)
-    return context
+    # Universal rules once, not per vertical
+    return get_verticals_combined(matched[:3])
 
 
 def _build_analysis_prompt(content: str, source: str = "") -> str:
@@ -163,18 +161,17 @@ async def analyze_with_verticals(text: str, verticals: str) -> str:
     """
     available = ", ".join(VERTICALS.keys())
     vids = [v.strip() for v in verticals.split(",") if v.strip()]
-    v_context = ""
-    applied = []
-    for vid in vids:
-        vc = get_vertical(vid)
-        if vc:
-            v_context += vc
-            applied.append(vid)
-        else:
-            v_context += f"\n[Unknown vertical '{vid}'. Available: {available}]\n"
+    valid_vids = [v for v in vids if v in VERTICALS]
+    invalid_vids = [v for v in vids if v not in VERTICALS]
 
-    if not applied:
+    if not valid_vids:
         return f"No valid verticals provided. Available: {available}"
+
+    # Universal rules prepended once, not per vertical
+    v_context = get_verticals_combined(valid_vids)
+    if invalid_vids:
+        v_context += f"\n[Unknown verticals: {', '.join(invalid_vids)}. Available: {available}]\n"
+    applied = valid_vids
 
     prompt = f"""Analyze this content using ALL of the following industry checklists in a single pass: {', '.join(applied)}.
 Apply every checklist — do not skip any vertical's checks.

@@ -851,18 +851,40 @@ AI AGENT PITFALLS — instruct the AI to avoid these:
 }
 
 
-def get_vertical(vid):
-    """Get a vertical's context for the AI."""
+def get_universal_rules():
+    """Get the universal rules block (call once, not per vertical)."""
+    return UNIVERSAL_RULES
+
+
+def get_vertical(vid, include_rules=True):
+    """Get a vertical's context for the AI.
+    Set include_rules=False when calling multiple verticals to avoid repeating universal rules."""
     v = VERTICALS.get(vid)
     if not v:
         return ""
-    return f"""{UNIVERSAL_RULES}
+    rules = UNIVERSAL_RULES if include_rules else ""
+    return f"""{rules}
 ## {v['label']}
 
 {v['context']}
 
 Use YOUR full expertise to go beyond this checklist. If something looks wrong that isn't listed here, flag it anyway. Challenge every number against industry benchmarks.
 """
+
+
+def get_verticals_combined(vids):
+    """Get multiple verticals with universal rules prepended ONCE."""
+    sections = [UNIVERSAL_RULES]
+    for vid in vids:
+        v = VERTICALS.get(vid)
+        if v:
+            sections.append(f"""## {v['label']}
+
+{v['context']}
+
+Use YOUR full expertise to go beyond this checklist. If something looks wrong that isn't listed here, flag it anyway. Challenge every number against industry benchmarks.
+""")
+    return "\n".join(sections)
 
 
 def get_all_vertical_ids():
