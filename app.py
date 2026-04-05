@@ -1535,8 +1535,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 <div class="header">
   <h1>Push<span>Back</span></h1>
   <div style="display:flex;gap:16px;align-items:center">
-    <a href="#" onclick="document.getElementById('caseStudy').scrollIntoView({behavior:'smooth'});return false" style="font-size:13px;color:var(--text3);text-decoration:none">Case Study</a>
-    <a href="#" onclick="document.getElementById('pricingSection').style.display='block';document.getElementById('pricingSection').scrollIntoView({behavior:'smooth'});return false" style="font-size:13px;color:var(--text3);text-decoration:none">Pricing</a>
+<a href="#" onclick="document.getElementById('pricingSection').style.display='block';document.getElementById('pricingSection').scrollIntoView({behavior:'smooth'});return false" style="font-size:13px;color:var(--text3);text-decoration:none">Pricing</a>
     <a href="/terms" style="font-size:13px;color:var(--text3);text-decoration:none">Terms</a>
     <a href="/privacy" style="font-size:13px;color:var(--text3);text-decoration:none">Privacy</a>
     <div class="status" id="status">Loading...</div>
@@ -1564,48 +1563,6 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
         By uploading, you agree to our <a href="/terms" style="color:var(--accent)">Terms</a> and <a href="/privacy" style="color:var(--accent)">Privacy Policy</a>. Not professional advice.
       </div>
       <div id="usageBadge" style="margin-top:16px;font-size:13px;color:var(--text3)"></div>
-    </div>
-
-    <!-- Case Study -->
-    <div id="caseStudy" style="margin-top:56px;padding:0 4px">
-      <div style="text-align:center;margin-bottom:24px">
-        <div style="font-size:16px;font-weight:700;color:var(--text)">Real Example: 3 Verticals on One Codebase</div>
-      </div>
-
-      <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:16px">
-        A 5,000-line Python trading bot was reviewed with Developer, Quant Research, and Finance/Accounting verticals applied together. Each vertical caught issues the others missed.
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:16px">
-        <div style="padding:16px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px">
-          <div style="font-size:12px;font-weight:600;color:var(--red);margin-bottom:6px">Developer</div>
-          <ul style="font-size:12px;color:var(--text2);line-height:1.7;padding-left:16px;margin:0">
-            <li>Live API keys shipped in distribution zip</li>
-            <li>Crash protection disabled &mdash; wrong column names in data seeder</li>
-            <li>Settings save swallowed errors silently</li>
-          </ul>
-        </div>
-        <div style="padding:16px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px">
-          <div style="font-size:12px;font-weight:600;color:#92400e;margin-bottom:6px">Quant Research</div>
-          <ul style="font-size:12px;color:var(--text2);line-height:1.7;padding-left:16px;margin:0">
-            <li>Look-ahead bias &mdash; <code>shift(-12)</code> + <code>dropna()</code> truncated test data</li>
-            <li>Optimizer objective rewarded overtrading</li>
-            <li>Strategy with Sharpe 0.16 deployed live</li>
-          </ul>
-        </div>
-        <div style="padding:16px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px">
-          <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:6px">Finance/Accounting</div>
-          <ul style="font-size:12px;color:var(--text2);line-height:1.7;padding-left:16px;margin:0">
-            <li>Funding earnings double-counted in ledger</li>
-            <li>Thread-unsafe running total in P&amp;L</li>
-            <li>Stop-loss exits undercharged (limit fee on market orders)</li>
-          </ul>
-        </div>
-      </div>
-
-      <div style="font-size:12px;color:var(--text3);text-align:center;line-height:1.6">
-        Each vertical applies a different checklist. No single one catches everything.
-      </div>
     </div>
 
     <!-- Pricing (hidden by default — shown on limit hit, header link, or upsell click) -->
