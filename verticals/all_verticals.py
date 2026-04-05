@@ -55,6 +55,11 @@ CHECK ALL OF THESE — flag any that are missing or inadequate:
 - ERROR RESPONSES: API errors must return consistent JSON structure with error code, message, and request ID. Never leak stack traces, file paths, or SQL queries in production error responses
 - SECRETS: grep for hardcoded API keys, passwords, tokens in source files. Check: .env in .gitignore? No secrets in Docker build args? No secrets in CI/CD logs?
 - COST: if using paid APIs, verify actual cost per request against current provider pricing. A 10x cost assumption error kills the business.
+- FLASK SECURITY: if the app uses Flask, check: secret_key is not hardcoded or default, session cookies have httponly/secure/samesite flags, CSRF protection on all POST endpoints (flask-wtf or Origin header check), no debug=True in production, ProxyFix configured if behind reverse proxy (Nginx/Render/Heroku), Content-Security-Policy header set
+- FLASK DEPLOYMENT: Flask's built-in server is NOT for production. Check: is a WSGI server configured (gunicorn, waitress, uvicorn)? Worker count appropriate for the workload (CPU-bound: workers = cores, I/O-bound: workers = 2-4x cores)? Request timeout configured? Max request size limited? Static files served by reverse proxy, not Flask?
+- FLASK DATABASE: if using SQLAlchemy, check for: N+1 queries (use joinedload/subqueryload), connection pool size appropriate for worker count, teardown_appcontext closes sessions, migration tool configured (flask-migrate/alembic) with rollback tested, no raw SQL without parameterized queries (SQL injection)
+- FLASK AT SCALE: for high-traffic Flask apps, check: response caching (flask-caching or Redis), background task queue for long operations (Celery/RQ/huey — not in-request), rate limiting per endpoint, connection pooling for external APIs, health check endpoint that verifies all dependencies
+- FLASH/LEGACY MIGRATION: if reviewing a system with Flash, Silverlight, ActiveX, or Java Applets — these are end-of-life technologies with known security vulnerabilities. Check: browser support status (Flash removed from all major browsers), migration plan to HTML5/JS, data extraction from legacy SWF/FLA files, accessibility of migrated content
 
 CODE INTEGRITY RULES — apply to any codebase:
 - Every parameter and threshold must have a source or be flagged as UNKNOWN. "Where did this number come from?"
@@ -119,6 +124,8 @@ CHECK ALL OF THESE:
 - Uptime SLA with financial penalties
 - Data migration plan from current platform
 - 3-year TCO comparison against Shopify Plus, SFCC
+- FLASH SALES: inventory lock mechanism during flash/limited-time sales — can two buyers purchase the last item simultaneously? Check: database-level locking or optimistic concurrency on inventory decrements. Countdown timers must sync to server time, not client time (spoofable). Overselling protection: what happens when 10,000 users hit "buy" on 100 units at the same second?
+- FLASH SALE UX: urgency indicators (countdown, stock level) must be truthful — fake scarcity is an FTC enforcement target. Check current FTC/ASA/ACCC guidelines on urgency claims in the applicable jurisdiction
 
 DEEP VALIDATION — recalculate and verify every one of these:
 1. CHECKOUT CONVERSION FUNNEL MATH: Recalculate the claimed conversion rate step-by-step (landing > PDP > cart > checkout > payment > confirmation). If any step shows unrealistically high pass-through, demand evidence — look up current industry average cart-to-purchase rates for this sector to compare. Multiply the steps: compound probability means real end-to-end conversion is far lower than any single step's rate.
@@ -485,6 +492,8 @@ CHECK ALL OF THESE:
 - BACKUP RULE: 3-2-1 minimum (3 copies, 2 different media, 1 offsite). Test restore quarterly with documented RTO/RPO. RTO <4 hours for critical systems, <24 hours for non-critical. Air-gapped backup for ransomware resilience
 - PASSWORD POLICY: check the current NIST 800-63B password length recommendation — use the latest revision. No complexity requirements (they cause worse passwords). Check against Have I Been Pwned API on registration. No password rotation schedule (NIST says rotation causes weaker passwords)
 - CLOUD BASELINES: CIS Benchmarks for AWS/Azure/GCP as baseline. Check: S3 buckets not public, IAM roles follow least privilege (no inline policies, no * permissions), CloudTrail/audit logging enabled on all accounts, no root account access keys
+- FLASK-SPECIFIC SECURITY: Flask apps commonly have: debug mode enabled in production (leaks source code via debugger PIN), secret_key set to a weak/default value (enables session forgery), no rate limiting on authentication endpoints, CORS misconfigured (allowing * in production), file upload without size/type validation. Check each of these explicitly
+- FLASH STORAGE SECURITY: for systems using flash/SSD storage, check: encryption at rest enabled (OPAL/SED or software FDE), secure erase capability (TRIM + crypto erase, not just delete), wear leveling doesn't leave remnant data accessible, flash translation layer firmware is current (look up known vulnerabilities for the specific controller)
 
 DEEP VALIDATION CHECKS — catch the sophisticated failures that surface-level reviews miss:
 1. SCAN SCOPE GAP: Vulnerability scan covers external IPs only — not internal networks, containers, or cloud workloads. Attacker pivots internally and finds an unscanned playground. Cross-reference the scan target list against the actual asset inventory. If they don't match, the scan is incomplete.
@@ -801,6 +810,9 @@ CHECK ALL OF THESE:
 - Code correctness — are the mathematical formulas implemented correctly? Off-by-one errors in rolling windows, wrong division in ratio calculations, integer division where float was needed
 - Reproducibility — can the results be reproduced from the code and data provided?
 - Monte Carlo or bootstrap validation to test robustness beyond a single backtest path
+- FLASH CRASH DETECTION: does the strategy have circuit breaker logic for rapid price moves (>5% in <5 minutes)? What happens to open positions during an exchange halt? Does the bot cancel open orders on halt detection or leave them exposed? Check: does the exchange's API provide halt/maintenance status?
+- FLASH CRASH RECOVERY: after a flash crash, does the strategy re-enter at the recovered price or at the crash price? Gap protection: if price gaps through a stop loss, what is the actual fill vs the intended exit?
+- FLASH LOANS (DeFi): if the strategy interacts with DeFi protocols, check for flash loan attack vectors — reentrancy, oracle manipulation, sandwich attacks, MEV exposure. Smart contract audits must be from a reputable firm (look up current top auditors). Flash loan arbitrage strategies must account for gas costs and failed transaction costs
 
 DEEP VALIDATION CHECKS — catch the sophisticated failures that surface-level reviews miss:
 1. SHARPE RATIO WITHOUT RISK-FREE RATE: Sharpe ratio calculated as mean(returns)/std(returns) without subtracting the risk-free rate. In a 5% rate environment, this inflates Sharpe by 0.3-0.5. Also check: is annualization using the correct factor? Daily returns use sqrt(252), monthly uses sqrt(12), weekly uses sqrt(52). Using the wrong factor is a silent 20-40% error in the reported Sharpe.
@@ -934,6 +946,8 @@ CHECK ALL OF THESE — flag any that are missing or inadequate:
 - Transition/exit plan: what happens at contract end? Data portability, IP ownership, knowledge transfer timeline, documentation handover. If not addressed, you are building vendor lock-in into the contract
 - SLA structure: uptime guarantees, response times, resolution times, penalty clauses. SLAs without financial penalties are suggestions. Check: do SLAs cover the FULL stack or just the vendor's layer?
 - References: demand references from clients of similar size and complexity, not the vendor's biggest logo. Ask the reference: what went wrong and how was it handled?
+- FLASH/LEGACY MIGRATION SCOPE: if the project involves migrating from legacy Flash/Silverlight/ActiveX, the SOW must include: content inventory of all legacy assets, migration priority matrix (critical business function vs nice-to-have), browser compatibility testing matrix, accessibility compliance for migrated content, data extraction and preservation plan. Legacy migrations are routinely underestimated — look up industry benchmarks for migration effort per asset type
+- FLASK/DJANGO/NODE PLATFORM CHOICE: if the platform uses Flask, Django, Express, or similar framework, check: is the framework appropriate for the scale? Flask is lightweight but requires more assembly for enterprise features. Django includes batteries (ORM, admin, auth). Express is flexible but security is opt-in. The choice should be justified against requirements, not just developer preference
 
 DEEP VALIDATION CHECKS — catch the sophisticated failures:
 1. BAIT-AND-SWITCH TEAM: Proposal names senior architects and industry experts. After contract signing, the actual delivery team is different — junior staff from a delivery center. Check: does the contract require named resources with a substitution clause requiring client approval?
