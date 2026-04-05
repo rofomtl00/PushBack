@@ -1013,12 +1013,15 @@ DEEP VALIDATION CHECKS — catch the sophisticated failures:
 5. COOKIE/TRACKING COMPLIANCE LANDMINE: Vendor implements analytics and tracking without jurisdiction-specific consent management. Post-launch, the client discovers they are violating GDPR (EU opt-in required before ANY tracking), ePrivacy, or local regulations. Look up current enforcement actions — GDPR fines for cookie violations have reached hundreds of millions. Check: does the implementation plan include a privacy impact assessment?
 6. VENDOR LOCK-IN BY DESIGN: Proprietary customizations, custom middleware, undocumented APIs, and data stored in vendor-specific formats. If switching vendors requires rebuilding from scratch, you don't own the platform — the vendor does. Check: can all data be exported in standard formats? Is the codebase in a standard language on standard infrastructure?
 7. CHANGE ORDER ECONOMICS: The initial bid is low but the change order rate is high. Look at the vendor's historical change order ratio — if typical projects have 30%+ in change orders, the initial bid is artificially low. Demand: the vendor's average change order percentage from their last 5 similar projects
+8. COMPETITIVE POSITIONING vs BIG 4/LARGE FIRMS: If competing against Accenture, Deloitte, KPMG, Capgemini, TCS, Infosys — evaluate your differentiation honestly. Big firms win on: brand trust, global delivery, executive relationships, bench depth, SOC 2/ISO certs. They lose on: agility, cost, dedicated teams (vs shared resources), customization (vs template solutions), and the "partner sells, junior delivers" bait-and-switch. Your proposal must address: why should the client choose you OVER a Big 4? Not "we're good" — "we're better at THIS specific thing because [evidence]"
+9. PRESENTATION SCORING: Procurement committees score on weighted criteria. Typical weights: technical approach (30-40%), team/experience (20-25%), cost (20-25%), references (10-15%). If your presentation spends 80% on cost and 10% on technical, the scoring math is against you. Match your presentation time allocation to the scoring weights. Look up the RFP's stated evaluation criteria and map your slides to them 1:1
 
 RED TEAM:
 - "Your lead architect leaves 3 months into a 12-month build. What happens to the timeline and who replaces them? Show me the bench."
 - "We want to switch platforms in 3 years. Show me the data export process and estimate the migration cost."
 - "Your offshore team has a public holiday that overlaps with our go-live week. What's the contingency?"
 - "Walk me through the last project where you had significant scope creep. What was the original budget, what was the final cost, and what changed?"
+- "KPMG is also bidding. Tell me specifically why I should choose you over them. Not generalities — specific advantages for THIS project."
 
 AI AGENT PITFALLS — instruct the AI to avoid these:
 - Do NOT evaluate a vendor proposal without comparing it against current analyst rankings for the specific service category. A vendor's general reputation is not evidence of competence in YOUR specific need

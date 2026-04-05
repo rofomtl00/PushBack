@@ -62,19 +62,19 @@ def _detect_verticals(text: str) -> str:
     matched = []
 
     signals = {
-        "developer": ["api", "database", "deploy", "git", "test coverage", "ci/cd", "docker"],
+        "developer": ["api", "database", "deploy", "git", "test coverage", "ci/cd", "docker", "backend", "frontend", "code", "architecture", "server", "framework"],
         "ecommerce_platform": ["ecommerce", "shopify", "cart", "checkout", "retail", "pos"],
         "vfx_film": ["vfx", "shot", "render", "production", "animation", "studio"],
         "corporate_insurance": ["insurance", "premium", "d&o", "liability", "broker"],
         "project_management": ["project", "agile", "scrum", "milestone", "sprint", "gantt"],
         "design_creative": ["design", "typography", "color", "layout", "responsive", "ui", "ux", "chart", "slide", "presentation", "deck"],
         "finance_accounting": ["revenue", "budget", "tax", "financial", "profit", "balance sheet"],
-        "cybersecurity": ["security", "vulnerability", "firewall", "mfa", "breach", "encryption"],
+        "cybersecurity": ["security", "vulnerability", "firewall", "mfa", "breach", "encryption", "gdpr", "compliance", "privacy", "data protection", "cookie", "authentication"],
         "legal_contracts": ["contract", "clause", "indemnification", "liability", "nda", "ip ownership"],
         "hr_people": ["hiring", "salary", "turnover", "employee", "recruitment", "hr"],
-        "business_analyst": ["business case", "strategy", "roi", "market size", "stakeholder", "kpi"],
+        "business_analyst": ["business case", "strategy", "roi", "market size", "stakeholder", "kpi", "competitive", "analysis", "recommendation", "due diligence"],
         "quant_research": ["backtest", "sharpe", "alpha", "trading strategy", "p-value", "overfitting"],
-        "business_writing": ["memo", "proposal", "executive summary", "board deck", "email"],
+        "business_writing": ["memo", "proposal", "executive summary", "board deck", "email", "presentation", "bid", "pitch", "slide"],
         "digital_services": ["rfp", "vendor", "sow", "crm", "managed services", "procurement", "platform build", "ecommerce", "website", "database", "migration", "integration", "saas", "hosting", "maintenance contract", "sla"],
     }
 
